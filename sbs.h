@@ -44,6 +44,11 @@ static inline char *sbsstrend(sbs s)
     return s.str + s.len;
 }
 
+static inline void sbssetlen(sbs *s, size_t len)
+{
+    s->len = len;
+}
+
 // void sdsfree(sds s);
 // sds sdsgrowzero(sds s, size_t len);
 int sbsmove(sbs *s, char buffer[], size_t buffer_size);
