@@ -5,6 +5,8 @@
 #include <stdarg.h>
 #include <stdint.h>
 
+#define SBS_PRINTF_FMT_SIZE 1024
+
 typedef struct
 {
     char *str;
@@ -59,12 +61,16 @@ int sbscatsbs(sbs *s, const sbs *t);
 int sbscpylen(sbs *s, const char *t, size_t len);
 int sbscpy(sbs *s, const char *t);
 
+int sbscatbufvprintf(sbs *s, char buffer[], size_t buffer_size, const char *fmt, va_list ap);
 int sbscatvprintf(sbs *s, const char *fmt, va_list ap);
 #ifdef __GNUC__
 int sbscatprintf(sbs *s, const char *fmt, ...)
     __attribute__((format(printf, 2, 3)));
+int sbscatbufprintf(sbs *s, char buffer[], size_t buffer_size, const char *fmt, ...)
+    __attribute__((format(printf, 4, 5)));
 #else
 int sbscatprintf(sbs *s, const char *fmt, ...);
+int sbscatbufprintf(sbs *s, char buffer[], size_t buffer_size, const char *fmt, ...);
 #endif
 
 int sbscatfmt(sbs *s, char const *fmt, ...);
@@ -80,9 +86,9 @@ void sbstoupper(sbs *s);
 int sbsfromlonglong(sbs *s, long long value);
 int sbscatrepr(sbs *s, const char *p, size_t len);
 // sds *sdssplitargs(const char *line, int *argc);
-int sbsmapchars(sbs *s, const char *from, const char *to, size_t setlen);
-int sbsjoin(sbs *s, char **argv, int argc, char *sep);
-int sbsjoinsbs(sbs *s, sbs *argv, int argc, const char *sep, size_t seplen);
+void sbsmapchars(sbs *s, const char *from, const char *to, size_t setlen);
+int sbsjoin(sbs *s, char **argv, int argc, const char *sep);
+int sbsjoinsbs(sbs *s, sbs argv[], int argc, const char *sep, size_t seplen);
 
 /* Low level functions exposed to the user API */
 // sds sdsMakeRoomFor(sds s, size_t addlen);
