@@ -2,13 +2,16 @@
 
 #include <string.h>
 
+#define SBS_NULL_TERMINATE(s) (s).str[(s).len] = '\0'
+
 sbs sbsnewlen(const void *init, size_t initlen, char buffer[], size_t buffer_size)
 {
     sbs s;
     s.str = buffer;
     s.size = buffer_size;
+    s.len = initlen;
     memcpy(s.str, init, initlen);
-    s.str[initlen] = '\0';
+    SBS_NULL_TERMINATE(s);
     return s;
 }
 
@@ -36,7 +39,7 @@ int sbsmove(sbs *s, char buffer[], size_t buffer_size)
     memcpy(buffer, s->str, s->len);
     s->size = buffer_size;
     s->str = buffer;
-    s->str[s->len] = '\0';
+    SBS_NULL_TERMINATE(*s);
     return 0;
 }
 
@@ -48,7 +51,7 @@ void sbsupdatelen(sbs *s)
 void sbsclear(sbs *s)
 {
     s->len = 0;
-    s->str[0] = '\0';
+    SBS_NULL_TERMINATE(*s);
 }
 
 int sbscatlen(sbs *s, const void *t, size_t len)
@@ -59,11 +62,33 @@ int sbscatlen(sbs *s, const void *t, size_t len)
     }
     memcpy(sbsstrend(*s), t, len);
     s->len += len;
-    s->str[s->len] = '\0';
+    SBS_NULL_TERMINATE(*s);
     return 0;
 }
 
 int sbscat(sbs *s, const char *t)
 {
     return sbscatlen(s, t, strlen(t));
+}
+
+int sbscatsbs(sbs *s, const sbs *t)
+{
+    return sbscatlen(s, t->str, t->len);
+}
+
+int sbscpylen(sbs *s, const char *t, size_t len)
+{
+    if (len >= s->size)
+    {
+        return -1;
+    }
+    s->len = len;
+    memcpy(s->str, t, len);
+    SBS_NULL_TERMINATE(*s);
+    return 0;
+}
+
+int sbscpy(sbs *s, const char *t)
+{
+    return sbscpylen(s, t, strlen(t));
 }
