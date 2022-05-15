@@ -97,11 +97,12 @@ int sbscpy(sbs *s, const char *t)
 }
 
 /* Like sdscatprintf() but gets va_list instead of being variadic. */
-int sbscatbufvprintf(sbs *s, char buffer[], size_t buffer_size, const char *fmt, va_list ap)
+int sbscatbufvprintf(sbs *s, sbs *sbuf, const char *fmt, va_list ap)
 {
+    sbsclear(sbuf);
     va_list cpy;
-    char *buf = buffer;
-    size_t buflen = buffer_size;
+    char *buf = sbuf->str;
+    size_t buflen = sbuf->size;
 
     buf[buflen - 2] = '\0';
     va_copy(cpy, ap);
@@ -119,7 +120,8 @@ int sbscatbufvprintf(sbs *s, char buffer[], size_t buffer_size, const char *fmt,
 int sbscatvprintf(sbs *s, const char *fmt, va_list ap)
 {
     char staticbuf[SBS_PRINTF_FMT_SIZE];
-    return sbscatbufvprintf(s, staticbuf, SBS_PRINTF_FMT_SIZE, fmt, ap);
+    sbs buf = SBSEMPTY(staticbuf);
+    return sbscatbufvprintf(s, &buf, fmt, ap);
 }
 
 int sbscatprintf(sbs *s, const char *fmt, ...)
@@ -132,12 +134,12 @@ int sbscatprintf(sbs *s, const char *fmt, ...)
     return t;
 }
 
-int sbscatbufprintf(sbs *s, char buffer[], size_t buffer_size, const char *fmt, ...)
+int sbscatbufprintf(sbs *s, sbs *sbuf, const char *fmt, ...)
 {
     va_list ap;
     int t;
     va_start(ap, fmt);
-    t = sbscatbufvprintf(s, buffer, buffer_size, fmt, ap);
+    t = sbscatbufvprintf(s, sbuf, fmt, ap);
     va_end(ap);
     return t;
 }

@@ -59,16 +59,16 @@ int sbscatsbs(sbs *s, const sbs *t);
 int sbscpylen(sbs *s, const char *t, size_t len);
 int sbscpy(sbs *s, const char *t);
 
-int sbscatbufvprintf(sbs *s, char buffer[], size_t buffer_size, const char *fmt, va_list ap);
+int sbscatbufvprintf(sbs *s, sbs *buf, const char *fmt, va_list ap);
 int sbscatvprintf(sbs *s, const char *fmt, va_list ap);
 #ifdef __GNUC__
 int sbscatprintf(sbs *s, const char *fmt, ...)
     __attribute__((format(printf, 2, 3)));
-int sbscatbufprintf(sbs *s, char buffer[], size_t buffer_size, const char *fmt, ...)
-    __attribute__((format(printf, 4, 5)));
+int sbscatbufprintf(sbs *s, sbs *buf, const char *fmt, ...)
+    __attribute__((format(printf, 3, 4)));
 #else
 int sbscatprintf(sbs *s, const char *fmt, ...);
-int sbscatbufprintf(sbs *s, char buffer[], size_t buffer_size, const char *fmt, ...);
+int sbscatbufprintf(sbs *s, sbs *buf, const char *fmt, ...);
 #endif
 
 int sbscatfmt(sbs *s, char const *fmt, ...);
