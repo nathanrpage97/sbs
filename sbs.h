@@ -5,8 +5,6 @@
 #include <stdarg.h>
 #include <stdint.h>
 
-#define SBS_PRINTF_FMT_SIZE 1024
-
 typedef struct
 {
     char *str;
@@ -59,20 +57,15 @@ int sbscatsbs(sbs *s, const sbs *t);
 int sbscpylen(sbs *s, const char *t, size_t len);
 int sbscpy(sbs *s, const char *t);
 
-int sbscatbufvprintf(sbs *s, sbs *buf, const char *fmt, va_list ap);
 int sbscatvprintf(sbs *s, const char *fmt, va_list ap);
 #ifdef __GNUC__
 int sbscatprintf(sbs *s, const char *fmt, ...)
     __attribute__((format(printf, 2, 3)));
-int sbscatbufprintf(sbs *s, sbs *buf, const char *fmt, ...)
-    __attribute__((format(printf, 3, 4)));
 #else
 int sbscatprintf(sbs *s, const char *fmt, ...);
-int sbscatbufprintf(sbs *s, sbs *buf, const char *fmt, ...);
 #endif
 
 int sbscatfmt(sbs *s, char const *fmt, ...);
-int sbscatbuffmt(sbs *s, sbs *buf, char const *fmt, ...);
 void sbstrim(sbs *s, const char *cset);
 void sbsrange(sbs *s, ssize_t start, ssize_t end);
 void sbsupdatelen(sbs *s);

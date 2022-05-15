@@ -5,7 +5,18 @@
 #include <stdarg.h>
 #include <stdio.h>
 
+#if SBS_MALLOC_ENABLE == 1
+#include <stdlib.h>
+#endif
+
 #define SBS_NULL_TERMINATE(s) (s).str[(s).len] = '\0'
+
+static void sbsclone(sbs *src, sbs *dst)
+{
+    dst->size = src->size;
+    dst->len = src->len;
+    dst->str = src->str;
+}
 
 sbs sbsnewlen(const void *init, size_t initlen, char buffer[], size_t buffer_size)
 {
@@ -96,32 +107,18 @@ int sbscpy(sbs *s, const char *t)
     return sbscpylen(s, t, strlen(t));
 }
 
-/* Like sdscatprintf() but gets va_list instead of being variadic. */
-int sbscatbufvprintf(sbs *s, sbs *sbuf, const char *fmt, va_list ap)
+/* Like sbscatprintf() but gets va_list instead of being variadic. */
+int sbscatvprintf(sbs *s, const char *fmt, va_list ap)
 {
-    sbsclear(sbuf);
-    va_list cpy;
-    char *buf = sbuf->str;
-    size_t buflen = sbuf->size;
-
-    buf[buflen - 2] = '\0';
-    va_copy(cpy, ap);
-    vsnprintf(buf, buflen, fmt, cpy);
-    va_end(cpy);
-    if (buf[buflen - 2] != '\0')
+    size_t bufsize = sbssizerem(*s);
+    int n = vsnprintf(sbsstrend(*s), bufsize, fmt, ap);
+    if (n >= bufsize)
     {
         return -1;
     }
-    /* Finally concat the obtained string to the SDS string and return it. */
-    return sbscat(s, buf);
-}
-
-/* Like sdscatprintf() but gets va_list instead of being variadic. */
-int sbscatvprintf(sbs *s, const char *fmt, va_list ap)
-{
-    char staticbuf[SBS_PRINTF_FMT_SIZE];
-    sbs buf = SBSEMPTY(staticbuf);
-    return sbscatbufvprintf(s, &buf, fmt, ap);
+    s->len += n;
+    SBS_NULL_TERMINATE(*s);
+    return 0;
 }
 
 int sbscatprintf(sbs *s, const char *fmt, ...)
@@ -130,16 +127,6 @@ int sbscatprintf(sbs *s, const char *fmt, ...)
     int t;
     va_start(ap, fmt);
     t = sbscatvprintf(s, fmt, ap);
-    va_end(ap);
-    return t;
-}
-
-int sbscatbufprintf(sbs *s, sbs *sbuf, const char *fmt, ...)
-{
-    va_list ap;
-    int t;
-    va_start(ap, fmt);
-    t = sbscatbufvprintf(s, sbuf, fmt, ap);
     va_end(ap);
     return t;
 }
@@ -203,14 +190,14 @@ void sbsrange(sbs *s, ssize_t start, ssize_t end)
     SBS_NULL_TERMINATE(*s);
 }
 
-/* Apply tolower() to every character of the sds string 's'. */
+/* Apply tolower() to every character of the sbs string 's'. */
 void sbstolower(sbs *s)
 {
     for (size_t j = 0; j < sbslen(*s); j++)
         s->str[j] = tolower(s->str[j]);
 }
 
-/* Apply tolower() to every character of the sds string 's'. */
+/* Apply tolower() to every character of the sbs string 's'. */
 void sbstoupper(sbs *s)
 {
     for (size_t j = 0; j < sbslen(*s); j++)
@@ -235,10 +222,10 @@ int sbscmp(const sbs *s1, const sbs *s2)
  * characters specified in the 'from' string to the corresponding character
  * in the 'to' array.
  *
- * For instance: sdsmapchars(mystring, "ho", "01", 2)
+ * For instance: sbsmapchars(mystring, "ho", "01", 2)
  * will have the effect of turning the string "hello" into "0ell1".
  *
- * The function returns the sds string pointer, that is always the same
+ * The function returns the sbs string pointer, that is always the same
  * as the input pointer since no resize is needed. */
 void sbsmapchars(sbs *s, const char *from, const char *to, size_t setlen)
 {
@@ -257,7 +244,7 @@ void sbsmapchars(sbs *s, const char *from, const char *to, size_t setlen)
     }
 }
 
-/* Helper for sdscatlonglong() doing the actual number -> string
+/* Helper for sbscatlonglong() doing the actual number -> string
  * conversion. 's' must point to a string with room for at least
  * SBS_LLSTR_SIZE bytes.
  *
@@ -331,9 +318,9 @@ static int sbsull2str(char *s, unsigned long long v)
     return l;
 }
 
-/* Create an sds string from a long long value. It is much faster than:
+/* Create an sbs string from a long long value. It is much faster than:
  *
- * sdscatprintf(sdsempty(),"%lld\n", value);
+ * sbscatprintf(sbsempty(),"%lld\n", value);
  */
 int sbsfromlonglong(sbs *s, long long value)
 {
@@ -343,7 +330,7 @@ int sbsfromlonglong(sbs *s, long long value)
 }
 
 /* Join an array of C strings using the specified separator (also a C string).
- * Returns the result as an sds string. */
+ * Returns the result as an sbs string. */
 int sbsjoin(sbs *s, char **argv, int argc, const char *sep)
 {
     int j;
@@ -390,9 +377,11 @@ int sbsjoinsbs(sbs *s, sbs argv[], int argc, const char *sep, size_t seplen)
     return 0;
 }
 
-static int sbscatbufvfmt(sbs *s, sbs *buf, char const *fmt, va_list ap)
+static int sbscatvfmt(sbs *s, char const *fmt, va_list ap)
 {
-    sbsclear(buf);
+    sbs buf_base;
+    sbsclone(s, &buf_base);
+    sbs *buf = &buf_base;
     const char *f = fmt;
 
     f = fmt; /* Next format specifier byte to process. */
@@ -488,41 +477,15 @@ static int sbscatbufvfmt(sbs *s, sbs *buf, char const *fmt, va_list ap)
         f++;
     }
     va_end(ap);
-    return sbscatsbs(s, buf);
-}
-
-/* This function is similar to sdscatprintf, but much faster as it does
- * not rely on sprintf() family functions implemented by the libc that
- * are often very slow. Moreover directly handling the sds string as
- * new data is concatenated provides a performance improvement.
- *
- * However this function only handles an incompatible subset of printf-alike
- * format specifiers:
- *
- * %s - C String
- * %S - SDS string
- * %i - signed int
- * %I - 64 bit signed integer (long long, int64_t)
- * %u - unsigned int
- * %U - 64 bit unsigned integer (unsigned long long, uint64_t)
- * %% - Verbatim "%" character.
- */
-int sbscatbuffmt(sbs *s, sbs *buf, char const *fmt, ...)
-{
-    va_list ap;
-    va_start(ap, fmt);
-    int err = sbscatbufvfmt(s, buf, fmt, ap);
-    va_end(ap);
-    return err;
+    sbsclone(buf, s);
+    return 0;
 }
 
 int sbscatfmt(sbs *s, char const *fmt, ...)
 {
     va_list ap;
-    char base_buffer[SBS_PRINTF_FMT_SIZE];
     va_start(ap, fmt);
-    sbs buf = SBSEMPTY(base_buffer);
-    int err = sbscatbufvfmt(s, &buf, fmt, ap);
+    int err = sbscatvfmt(s, fmt, ap);
     va_end(ap);
     return err;
 }
