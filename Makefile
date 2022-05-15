@@ -9,7 +9,7 @@ endif
 all: sbs sbs-test
 
 sbs-test: sbs
-	$(CC) $(CFLAGS) -o sbs-test sbs-test.c sbs.c
+	$(CC) $(CFLAGS) -o test-sbs test-sbs.c sbs.c
 
 sbs:
 	$(CC) $(CFLAGS) -shared -o libsbs.so sbs.c
