@@ -1,5 +1,6 @@
 import sbs
 import pytest
+import ctypes as ct
 
 
 def test_sbsnew() -> None:
@@ -29,3 +30,27 @@ def test_sbscat() -> None:
 
     text = sbs.sbscat(text, "123")
     assert text.str == "testtest123"
+
+
+# def test_sbscatfmt() -> None:
+#     text = sbs.sbsempty(size=24)
+#     val1, val2 = ct.c_int(23), ct.c_int(32)
+#     text = sbs.sbscatfmt(text, "%i %i", val1, val2)
+
+#     assert text.str == "23 32"
+
+
+# def test_sbscatprintf() -> None:
+#     text = sbs.sbsempty(size=24)
+#     val1, val2 = ct.c_int(23), ct.c_int(32)
+#     text = sbs.sbscatprintf(text, "%d %d", val1, val2)
+#     val1, val2
+#     assert text.str == "23 32"
+
+
+def test_sbsdup() -> None:
+    text = sbs.sbsempty(size=24)
+    text = sbs.sbscat(text, "this is some text")
+
+    with pytest.raises(sbs.SBSException):
+        sbs.sbsdup(text, size=2)

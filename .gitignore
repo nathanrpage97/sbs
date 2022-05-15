@@ -1,3 +1,5 @@
+sbs-test
+*.dSYM
 # Editors
 .vscode/
 .idea/

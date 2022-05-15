@@ -1,5 +1,5 @@
 import ctypes as ct
-from typing import Union
+from typing import Any, Union
 
 libsbs = ct.CDLL("libsbs.so")
 
@@ -20,9 +20,6 @@ class sbs(ct.Structure):
     @property
     def bytes(self) -> bytes:
         return ct.cast(self._str, ct.POINTER(ct.c_char * self.len)).contents.raw
-
-
-a = (ct.c_char * 10)()
 
 
 class SBSException(Exception):
@@ -62,6 +59,26 @@ def sbsnew(text: str, *, size: int) -> sbs:
     return val
 
 
+libsbs.sbsempty.restype = sbs
+
+
+def sbsempty(*, size: int) -> sbs:
+    buffer = ct.create_string_buffer(size)
+    val = libsbs.sbsempty(ct.byref(buffer), ct.c_size_t(size))
+    val._buffer = buffer
+    return val
+
+
+libsbs.sbsempty.restype = sbs
+
+
+def sbsdup(s: sbs, *, size: int) -> sbs:
+    buffer = ct.create_string_buffer(size)
+    val = libsbs.sbsempty(ct.byref(s), ct.byref(buffer), ct.c_size_t(size))
+    val._buffer = buffer
+    return val
+
+
 libsbs.sbscatlen.errcheck = errcheck
 
 
@@ -75,4 +92,32 @@ libsbs.sbscat.errcheck = errcheck
 
 def sbscat(s: sbs, text: str) -> sbs:
     libsbs.sbscat(ct.byref(s), text.encode())
+    return s
+
+
+libsbs.sbscatfmt.errcheck = errcheck
+
+
+# something is not working here (c code is fine)
+
+
+def sbscatfmt(s: sbs, format: str, *args: Any) -> sbs:
+    libsbs.sbscatfmt(
+        ct.byref(s),
+        format.encode(),
+        ct.c_int(32),
+        ct.c_int(23),
+    )
+    return s
+
+
+libsbs.sbscatprintf.errcheck = errcheck
+
+# something is not working here (c code is fine)
+def sbscatprintf(s: sbs, format: str, *args: Any) -> sbs:
+    libsbs.sbscatprintf(
+        ct.byref(s),
+        format.encode(),
+        *args,
+    )
     return s

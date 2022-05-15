@@ -387,3 +387,140 @@ int sbsjoinsbs(sbs *s, sbs argv[], int argc, const char *sep, size_t seplen)
     }
     return 0;
 }
+
+static int sbscatbufvfmt(sbs *s, sbs *buf, char const *fmt, va_list ap)
+{
+    sbsclear(buf);
+    const char *f = fmt;
+
+    f = fmt; /* Next format specifier byte to process. */
+    while (*f)
+    {
+        char next, *str;
+        size_t l;
+        long long num;
+        unsigned long long unum;
+
+        switch (*f)
+        {
+        case '%':
+            next = *(f + 1);
+            f++;
+            switch (next)
+            {
+            case 's':
+            {
+                str = va_arg(ap, char *);
+                int err = sbscat(buf, str);
+                if (err != 0)
+                {
+                    return -1;
+                }
+                break;
+            }
+            case 'S':
+            {
+                sbs *tmp_sbs = va_arg(ap, sbs *);
+                int err = sbscatsbs(buf, tmp_sbs);
+                if (err != 0)
+                {
+                    return -1;
+                }
+                break;
+            }
+            case 'i':
+            case 'I':
+                if (next == 'i')
+                    num = va_arg(ap, int);
+                else
+                    num = va_arg(ap, long long);
+                {
+                    char numbuf[SBS_LLSTR_SIZE];
+                    l = sbsll2str(numbuf, num);
+                    int err = sbscatlen(buf, numbuf, l);
+                    if (err != 0)
+                    {
+                        return -1;
+                    }
+                    break;
+                }
+                break;
+            case 'u':
+            case 'U':
+                if (next == 'u')
+                    unum = va_arg(ap, unsigned int);
+                else
+                    unum = va_arg(ap, unsigned long long);
+                {
+                    char numbuf[SBS_LLSTR_SIZE];
+                    l = sbsull2str(numbuf, unum);
+                    int err = sbscatlen(buf, numbuf, l);
+                    if (err != 0)
+                    {
+                        return -1;
+                    }
+                    break;
+                }
+                break;
+            default:
+            { /* Handle %% and generally %<unknown>. */
+                int err = sbscatlen(buf, &next, 1);
+                if (err != 0)
+                {
+                    return -1;
+                }
+                break;
+            }
+            }
+            break;
+        default:
+        {
+            int err = sbscatlen(buf, f, 1);
+            if (err != 0)
+            {
+                return -1;
+            }
+            break;
+        }
+        }
+        f++;
+    }
+    va_end(ap);
+    return sbscatsbs(s, buf);
+}
+
+/* This function is similar to sdscatprintf, but much faster as it does
+ * not rely on sprintf() family functions implemented by the libc that
+ * are often very slow. Moreover directly handling the sds string as
+ * new data is concatenated provides a performance improvement.
+ *
+ * However this function only handles an incompatible subset of printf-alike
+ * format specifiers:
+ *
+ * %s - C String
+ * %S - SDS string
+ * %i - signed int
+ * %I - 64 bit signed integer (long long, int64_t)
+ * %u - unsigned int
+ * %U - 64 bit unsigned integer (unsigned long long, uint64_t)
+ * %% - Verbatim "%" character.
+ */
+int sbscatbuffmt(sbs *s, sbs *buf, char const *fmt, ...)
+{
+    va_list ap;
+    va_start(ap, fmt);
+    int err = sbscatbufvfmt(s, buf, fmt, ap);
+    va_end(ap);
+    return err;
+}
+
+int sbscatfmt(sbs *s, char const *fmt, ...)
+{
+    va_list ap;
+    char base_buffer[SBS_PRINTF_FMT_SIZE];
+    va_start(ap, fmt);
+    sbs buf = SBSEMPTY(base_buffer);
+    int err = sbscatbufvfmt(s, &buf, fmt, ap);
+    va_end(ap);
+    return err;
+}
