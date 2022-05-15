@@ -15,7 +15,7 @@ typedef struct {
 static inline char *sbsstr(sbs *s) { return s->str; }
 static inline size_t sbslen(const sbs *s) { return s->len; }
 
-static inline size_t sbssize(const sbs *s) { return s->len; }
+static inline size_t sbssize(const sbs *s) { return s->size; }
 static inline size_t sbsavail(const sbs *s) { return s->size - s->len; }
 static inline char *sbsend(const sbs *s) { return s->str + s->len; }
 

@@ -6,7 +6,25 @@
 
 void test_sbsnew() {
     sbs* text = SBSNEW("this is a test", 512);
-    ASSERT_STRING_EQUALS("this is a test", sbsstr(text));
+    ASSERT_STRING_EQUALS(sbsstr(text), "this is a test");
+    sbs* fail = SBSNEW("this is too long", 16);
+    ASSERT_EQUALS(NULL, fail);
+    sbs* canfit = SBSNEW("this is just right", 19);
+    ASSERT_STRING_EQUALS(sbsstr(canfit), "this is just right");
+}
+
+void test_sbsnewlen() {
+    const char raw_data[] = {65, 65, 65, 0x0, 23, 32};
+    sbs* data = SBSNEWLEN(raw_data, sizeof(raw_data), 512);
+    ASSERT_EQUALS(sbslen(data), sizeof(raw_data));
+    ASSERT_EQUALS(raw_data[4], data->str[4]);  // check it went pass null-term
+}
+
+void test_sbsempty() {
+    sbs* text = SBSEMPTY(512);
+    ASSERT_EQUALS(sbslen(text), 0);
+    ASSERT_EQUALS(text->str[0], '\0');
+    ASSERT_EQUALS(sbssize(text), 512);
 }
 
 // int main() {
@@ -25,7 +43,8 @@ void test_sbsnew() {
 // }
 
 int main() {
+    RUN(test_sbsnewlen);
     RUN(test_sbsnew);
-
+    RUN(test_sbsempty);
     return TEST_REPORT();
 }
