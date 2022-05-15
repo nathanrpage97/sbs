@@ -1,4 +1,4 @@
-name: C/C++ CI
+name: "Build and Test"
 
 on:
   push:
@@ -10,7 +10,9 @@ jobs:
   build-and-test:
     runs-on: ubuntu-latest
     steps:
-      - name: "Checkout"
+      - name: Checkout
         uses: actions/checkout@v2
-      - run: make
-      - run: ./test-sbs
+      - name: Build
+        run: make
+      - name: Test
+        run: ./test-sbs
