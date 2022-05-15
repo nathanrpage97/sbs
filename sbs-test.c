@@ -9,6 +9,8 @@ int main() {
     printf("%s\n", sbsstr(text));
 
     sbs* text2 = SBSNEW("cool", 512);
-    printf("%s", sbsstr(text2));
+    printf("text2: %s\n", sbsstr(text2));
+    sbs* text3 = SBSDUP(text2, 512);
+    printf("text3: %s\n", sbsstr(text3));
     return 0;
 }

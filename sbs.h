@@ -23,11 +23,21 @@ static inline char *sbsend(const sbs *s) { return s->str + s->len; }
 sbs *sbsnewlen(sbs *s, const void *init, size_t initlen, char buffer[],
                size_t buffer_size);
 #define SBSNEWLEN(init, initlen, size) \
-    sbsnewlen(&(sbs){}, init, initlen, (char[size]){0}, size)
+    sbsnewlen(&(sbs){0}, init, initlen, (char[size]){0}, size)
 sbs *sbsnew(sbs *s, const char *init, char buffer[], size_t buffer_size);
 #define SBSNEW(init, size) sbsnew(&(sbs){0}, init, (char[size]){0}, size)
 sbs *sbsempty(sbs *s, char buffer[], size_t buffer_size);
 #define SBSEMPTY(size) sbsempty(&(sbs){0}, (char[size]){0}, size)
+sbs *sbsdup(sbs *s, sbs *d, char buffer[], size_t buffer_size);
+#define SBSDUP(s, size) sbsdup(s, &(sbs){0}, (char[size]){0}, size)
+
+// add some convenience creators
+#define SBS64(init) SBSNEW(init, 128)
+#define SBS128(init) SBSNEW(init, 128)
+#define SBS256(init) SBSNEW(init, 256)
+#define SBS512(init) SBSNEW(init, 512)
+#define SBS1024(init) SBSNEW(init, 1024)
+#define SBS2048(init) SBSNEW(init, 2048)
 
 // fill
 int sbscatlen(sbs *s, const void *t, size_t len);

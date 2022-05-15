@@ -69,8 +69,7 @@ def test_sbscpysbs() -> None:
     text = sbs.sbscat(text, "this is some text")
 
     with pytest.raises(sbs.SBSException):
-        dest = sbs.sbsempty(size=1)
-        sbs.sbscpysbs(text, dest)
+        sbs.sbsdup(text, size=2)
 
 
 def test_sbsjoin() -> None:
@@ -88,3 +87,10 @@ def test_sbsjoinsbs() -> None:
     text = sbs.sbsjoinsbs(text, [text1, text2], sep="|")
 
     assert text.str == "cool|123"
+
+
+def test_sbsrange() -> None:
+    text = sbs.sbsnew("hello world testing", size=42)
+
+    sbs.sbsrange(text, 1, -2)
+    assert text.str == "ello world testin"

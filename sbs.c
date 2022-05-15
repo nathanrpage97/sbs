@@ -43,12 +43,8 @@ sbs *sbsempty(sbs *s, char *buffer, size_t buffer_size) {
     return s;
 }
 
-int sbscpysbs(const sbs *s, sbs *d) {
-    if (s->len >= d->size) {
-        return -1;
-    }
-    sbsnewlen(d, s->str, s->len, d->str, d->size);
-    return 0;
+sbs *sbsdup(sbs *s, sbs *d, char buffer[], size_t buffer_size) {
+    return sbsnewlen(d, s->str, s->len, buffer, buffer_size);
 }
 
 int sbsresize(sbs *s, char buffer[], size_t buffer_size) {

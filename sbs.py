@@ -32,8 +32,8 @@ def errcheck(result: int, *args) -> int:
     return result
 
 
-def nullcheck(result: "ct.POINTER[sbs]", *args) -> sbs:
-    if result.contents is None:
+def nullcheck(result: "ct.pointer[sbs]", *args) -> sbs:
+    if not result:
         raise SBSException()
     return result.contents
 
@@ -82,11 +82,15 @@ def sbsempty(*, size: int) -> sbs:
     return val
 
 
-libsbs.sbscpysbs.errcheck = errcheck
+libsbs.sbsdup.errcheck = nullcheck
+libsbs.sbsdup.restype = ct.POINTER(sbs)
 
 
-def sbscpysbs(s: sbs, d: sbs) -> sbs:
-    libsbs.sbscpysbs(ct.byref(s), ct.byref(d))
+def sbsdup(s: sbs, *, size: int) -> sbs:
+    d = sbs()
+    buffer = ct.create_string_buffer(size)
+    libsbs.sbsdup(ct.byref(s), ct.byref(d), ct.byref(buffer), ct.c_size_t(size))
+    d._buffer = buffer
     return d
 
 
