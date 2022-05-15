@@ -1,49 +1,33 @@
 #ifndef __SBS_H
 #define __SBS_H
 
-#include <sys/types.h>
 #include <stdarg.h>
 #include <stdint.h>
+#include <sys/types.h>
 
-typedef struct
-{
+typedef struct {
     char *str;
     size_t len;
     size_t size;
 } sbs;
 
 // sbs properties
-static inline char *sbsstr(sbs s)
-{
-    return s.str;
-}
-static inline size_t sbslen(sbs s)
-{
-    return s.len;
-}
+static inline char *sbsstr(sbs s) { return s.str; }
+static inline size_t sbslen(sbs s) { return s.len; }
 
-static inline size_t sbssize(sbs s)
-{
-    return s.len;
-}
-static inline size_t sbssizerem(sbs s)
-{
-    return s.size - s.len;
-}
-static inline char *sbsstrend(sbs s)
-{
-    return s.str + s.len;
-}
+static inline size_t sbssize(sbs s) { return s.len; }
+static inline size_t sbssizerem(sbs s) { return s.size - s.len; }
+static inline char *sbsstrend(sbs s) { return s.str + s.len; }
 
-static inline void sbssetlen(sbs *s, size_t len)
-{
-    if (s->len >= s->size)
-        return;
+static inline void sbssetlen(sbs *s, size_t len) {
+    if (s->len >= s->size) return;
     s->len = len;
 }
 
-int sbsnewlen(sbs *s, const void *init, size_t initlen, char buffer[], size_t buffer_size);
-#define SBSNEWLEN(init, initlen, buffer) sbsnewlen(init, initlen, buffer, sizeof(buffer))
+int sbsnewlen(sbs *s, const void *init, size_t initlen, char buffer[],
+              size_t buffer_size);
+#define SBSNEWLEN(init, initlen, buffer) \
+    sbsnewlen(init, initlen, buffer, sizeof(buffer))
 int sbsnew(sbs *s, const char *init, char buffer[], size_t buffer_size);
 #define SBSNEW(s, init, buffer) sbsnew(s, init, buffer, sizeof(buffer))
 sbs sbsempty(char *buffer, size_t buffer_size);

@@ -1,7 +1,8 @@
 #include "sbs.h"
+
 #include <stdio.h>
-int main()
-{
+
+int main() {
     char buffer[512];
     sbs text = SBSEMPTY(buffer);
     sbscatfmt(&text, "testing %i %i %s\n", 23, 33, "test");
