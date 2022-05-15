@@ -32,7 +32,14 @@ def errcheck(result: int, *args) -> int:
     return result
 
 
-libsbs.sbsnewlen.errcheck = errcheck
+def nullcheck(result: "ct.POINTER[sbs]", *args) -> sbs:
+    if result.contents is None:
+        raise SBSException()
+    return result.contents
+
+
+libsbs.sbsnewlen.errcheck = nullcheck
+libsbs.sbsnewlen.restype = ct.POINTER(sbs)
 
 
 def sbsnewlen(text: bytes, *, size: int) -> sbs:
@@ -45,7 +52,8 @@ def sbsnewlen(text: bytes, *, size: int) -> sbs:
     return val
 
 
-libsbs.sbsnew.errcheck = errcheck
+libsbs.sbsnew.errcheck = nullcheck
+libsbs.sbsnew.restype = ct.POINTER(sbs)
 
 
 def sbsnew(text: str, *, size: int) -> sbs:
@@ -62,21 +70,23 @@ def sbsnew(text: str, *, size: int) -> sbs:
     return val
 
 
-libsbs.sbsempty.restype = sbs
+libsbs.sbsempty.errcheck = nullcheck
+libsbs.sbsempty.restype = ct.POINTER(sbs)
 
 
 def sbsempty(*, size: int) -> sbs:
     buffer = ct.create_string_buffer(size)
-    val = libsbs.sbsempty(ct.byref(buffer), ct.c_size_t(size))
+    val = sbs()
+    libsbs.sbsempty(ct.byref(val), ct.byref(buffer), ct.c_size_t(size))
     val._buffer = buffer
     return val
 
 
-libsbs.sbsdup.errcheck = errcheck
+libsbs.sbscpysbs.errcheck = errcheck
 
 
-def sbsdup(s: sbs, d: sbs) -> sbs:
-    libsbs.sbsdup(ct.byref(s), ct.byref(d))
+def sbscpysbs(s: sbs, d: sbs) -> sbs:
+    libsbs.sbscpysbs(ct.byref(s), ct.byref(d))
     return d
 
 

@@ -64,13 +64,13 @@ def test_sbscat() -> None:
 #     assert text.str == "23 32"
 
 
-def test_sbsdup() -> None:
+def test_sbscpysbs() -> None:
     text = sbs.sbsempty(size=24)
     text = sbs.sbscat(text, "this is some text")
 
     with pytest.raises(sbs.SBSException):
         dest = sbs.sbsempty(size=1)
-        sbs.sbsdup(text, dest)
+        sbs.sbscpysbs(text, dest)
 
 
 def test_sbsjoin() -> None:
