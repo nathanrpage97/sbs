@@ -334,46 +334,52 @@ int sbsfromlonglong(sbs *s, long long value)
 int sbsjoin(sbs *s, char **argv, int argc, const char *sep)
 {
     int j;
+    sbs buf;
+    sbsclone(s, &buf);
 
     for (j = 0; j < argc; j++)
     {
-        int err = sbscat(s, argv[j]);
+        int err = sbscat(&buf, argv[j]);
         if (err != 0)
         {
             return err;
         }
         if (j != argc - 1)
         {
-            err = sbscat(s, sep);
+            err = sbscat(&buf, sep);
             if (err != 0)
             {
                 return err;
             }
         }
     }
+    sbsclone(&buf, s);
     return 0;
 }
 
 int sbsjoinsbs(sbs *s, sbs argv[], int argc, const char *sep, size_t seplen)
 {
     int j;
+    sbs buf;
+    sbsclone(s, &buf);
 
     for (j = 0; j < argc; j++)
     {
-        int err = sbscatsbs(s, &argv[j]);
+        int err = sbscatsbs(&buf, &argv[j]);
         if (err != 0)
         {
             return err;
         }
         if (j != argc - 1)
         {
-            err = sbscatlen(s, sep, seplen);
+            err = sbscatlen(&buf, sep, seplen);
             if (err != 0)
             {
                 return err;
             }
         }
     }
+    sbsclone(&buf, s);
     return 0;
 }
 
