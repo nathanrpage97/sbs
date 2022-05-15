@@ -53,4 +53,5 @@ def test_sbsdup() -> None:
     text = sbs.sbscat(text, "this is some text")
 
     with pytest.raises(sbs.SBSException):
-        sbs.sbsdup(text, size=2)
+        dest = sbs.sbsempty(size=1)
+        sbs.sbsdup(text, dest)

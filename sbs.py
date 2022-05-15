@@ -26,34 +26,37 @@ class SBSException(Exception):
     pass
 
 
-# text = Union[str, bytes]
-
-
 def errcheck(result: int, *args) -> int:
     if result != 0:
         raise SBSException()
     return result
 
 
-libsbs.sbsnewlen.restype = sbs
+libsbs.sbsnewlen.errcheck = errcheck
 
 
 def sbsnewlen(text: bytes, *, size: int) -> sbs:
     buffer = ct.create_string_buffer(size)
-    val = libsbs.sbsnewlen(
-        text, ct.c_size_t(len(text)), ct.byref(buffer), ct.c_size_t(size)
+    val = sbs()
+    libsbs.sbsnewlen(
+        ct.byref(val), text, ct.c_size_t(len(text)), ct.byref(buffer), ct.c_size_t(size)
     )
     val._buffer = buffer  # store to prevent garbage collection
     return val
 
 
-libsbs.sbsnew.restype = sbs
+libsbs.sbsnew.errcheck = errcheck
 
 
 def sbsnew(text: str, *, size: int) -> sbs:
     buffer = ct.create_string_buffer(size)
-    val = libsbs.sbsnewlen(
-        text.encode(), ct.c_size_t(len(text)), ct.byref(buffer), ct.c_size_t(size)
+    val = sbs()
+    libsbs.sbsnewlen(
+        ct.byref(val),
+        text.encode(),
+        ct.c_size_t(len(text)),
+        ct.byref(buffer),
+        ct.c_size_t(size),
     )
     val._buffer = buffer  # store to prevent garbage collection
     return val
@@ -69,14 +72,12 @@ def sbsempty(*, size: int) -> sbs:
     return val
 
 
-libsbs.sbsempty.restype = sbs
+libsbs.sbsdup.errcheck = errcheck
 
 
-def sbsdup(s: sbs, *, size: int) -> sbs:
-    buffer = ct.create_string_buffer(size)
-    val = libsbs.sbsempty(ct.byref(s), ct.byref(buffer), ct.c_size_t(size))
-    val._buffer = buffer
-    return val
+def sbsdup(s: sbs, d: sbs) -> sbs:
+    libsbs.sbsdup(ct.byref(s), ct.byref(d))
+    return d
 
 
 libsbs.sbscatlen.errcheck = errcheck

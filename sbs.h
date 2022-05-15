@@ -40,17 +40,17 @@ static inline void sbssetlen(sbs *s, size_t len)
     s->len = len;
 }
 
-sbs sbsnewlen(const void *init, size_t initlen, char buffer[], size_t buffer_size);
+int sbsnewlen(sbs *s, const void *init, size_t initlen, char buffer[], size_t buffer_size);
 #define SBSNEWLEN(init, initlen, buffer) sbsnewlen(init, initlen, buffer, sizeof(buffer))
-sbs sbsnew(const char *init, char buffer[], size_t buffer_size);
-#define SBSNEW(init, buffer) sbsnew(s, init, buffer, sizeof(buffer))
+int sbsnew(sbs *s, const char *init, char buffer[], size_t buffer_size);
+#define SBSNEW(s, init, buffer) sbsnew(s, init, buffer, sizeof(buffer))
 sbs sbsempty(char *buffer, size_t buffer_size);
 #define SBSEMPTY(buffer) sbsempty(buffer, sizeof(buffer))
-sbs sbsdup(const sbs *s, char buffer[], size_t buffer_size);
-#define SBSDUP(s, buffer) sbsdup(s, buffer, sizeof(buffer))
+int sbsdup(const sbs *src, sbs *dest);
+#define SBSDUP(s, d) sbsdup(s, d)
 
-int sbsmove(sbs *s, char buffer[], size_t buffer_size);
-#define SBSMOVE(s, buffer) sbsmove(s, buffer, sizeof(buffer_size))
+int sbsresize(sbs *s, char buffer[], size_t buffer_size);
+#define SBSRESIZE(s, buffer) sbsresize(s, buffer, sizeof(buffer_size))
 int sbscatlen(sbs *s, const void *t, size_t len);
 int sbscat(sbs *s, const char *t);
 int sbscatsbs(sbs *s, const sbs *t);

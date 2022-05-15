@@ -5,10 +5,6 @@
 #include <stdarg.h>
 #include <stdio.h>
 
-#if SBS_MALLOC_ENABLE == 1
-#include <stdlib.h>
-#endif
-
 #define SBS_NULL_TERMINATE(s) (s).str[(s).len] = '\0'
 
 static void sbsclone(sbs *src, sbs *dst)
@@ -18,33 +14,44 @@ static void sbsclone(sbs *src, sbs *dst)
     dst->str = src->str;
 }
 
-sbs sbsnewlen(const void *init, size_t initlen, char buffer[], size_t buffer_size)
+int sbsnewlen(sbs *s, const void *init, size_t initlen, char buffer[], size_t buffer_size)
 {
-    sbs s;
-    s.str = buffer;
-    s.size = buffer_size;
-    s.len = initlen;
-    memcpy(s.str, init, initlen);
-    SBS_NULL_TERMINATE(s);
-    return s;
+    if (initlen >= buffer_size)
+    {
+        return -1;
+    }
+    s->str = buffer;
+    s->size = buffer_size;
+    s->len = initlen;
+    memcpy(s->str, init, initlen);
+    SBS_NULL_TERMINATE(*s);
+    return 0;
 }
 
-sbs sbsnew(const char *init, char buffer[], size_t buffer_size)
+int sbsnew(sbs *s, const char *init, char buffer[], size_t buffer_size)
 {
-    return sbsnewlen(init, strlen(init), buffer, buffer_size);
+
+    return sbsnewlen(s, init, strlen(init), buffer, buffer_size);
 }
 
 sbs sbsempty(char *buffer, size_t buffer_size)
 {
-    return sbsnewlen("", 0, buffer, buffer_size);
+    sbs s;
+    // this will never fail
+    sbsnewlen(&s, "", 0, buffer, buffer_size);
+    return s;
 }
 
-sbs sbsdup(const sbs *s, char buffer[], size_t buffer_size)
+int sbsdup(const sbs *s, sbs *d)
 {
-    return sbsnewlen(s->str, s->len, buffer, buffer_size);
+    if (s->len >= d->size)
+    {
+        return -1;
+    }
+    return sbsnewlen(d, s->str, s->len, d->str, d->size);
 }
 
-int sbsmove(sbs *s, char buffer[], size_t buffer_size)
+int sbsresize(sbs *s, char buffer[], size_t buffer_size)
 {
     if (buffer_size <= s->len)
     {
