@@ -5,12 +5,14 @@
 #include <stdio.h>
 #include <string.h>
 
-#define SBS_NULL_TERMINATE(s) (s)->str[(s)->len] = '\0'
+#define SBS_NULLTERM(s) (s)->str[(s)->len] = '\0'
 
-#define SBS_CHECK(func)           \
-    do {                          \
-        int err = (func);         \
-        if (err != 0) return err; \
+#define SBS_CATCH(func, catch) \
+    do {                       \
+        int err = (func);      \
+        if (err != 0) {        \
+            catch;             \
+        }                      \
     } while (0);
 
 // create a shallow copy to allow updates
@@ -29,7 +31,7 @@ sbs *sbsnewlen(sbs *s, const void *init, size_t initlen, char buffer[],
     s->size = buffer_size;
     s->len = initlen;
     memcpy(s->str, init, initlen);
-    SBS_NULL_TERMINATE(s);
+    SBS_NULLTERM(s);
     return s;
 }
 
@@ -54,7 +56,7 @@ int sbsresize(sbs *s, char buffer[], size_t buffer_size) {
     memcpy(buffer, s->str, s->len);
     s->size = buffer_size;
     s->str = buffer;
-    SBS_NULL_TERMINATE(s);
+    SBS_NULLTERM(s);
     return 0;
 }
 
@@ -62,7 +64,7 @@ void sbsupdatelen(sbs *s) { s->len = strlen(s->str); }
 
 void sbsclear(sbs *s) {
     s->len = 0;
-    SBS_NULL_TERMINATE(s);
+    SBS_NULLTERM(s);
 }
 
 int sbscatlen(sbs *s, const void *t, size_t len) {
@@ -71,7 +73,7 @@ int sbscatlen(sbs *s, const void *t, size_t len) {
     }
     memcpy(sbsend(s), t, len);
     s->len += len;
-    SBS_NULL_TERMINATE(s);
+    SBS_NULLTERM(s);
     return 0;
 }
 
@@ -85,7 +87,7 @@ int sbscpylen(sbs *s, const char *t, size_t len) {
     }
     s->len = len;
     memcpy(s->str, t, len);
-    SBS_NULL_TERMINATE(s);
+    SBS_NULLTERM(s);
     return 0;
 }
 
@@ -96,11 +98,11 @@ int sbscatvprintf(sbs *s, const char *fmt, va_list ap) {
     size_t bufsize = sbsavail(s);
     int n = vsnprintf(sbsend(s), bufsize, fmt, ap);
     if (n >= bufsize) {
-        SBS_NULL_TERMINATE(s);
+        SBS_NULLTERM(s);
         return -1;
     }
     s->len += n;
-    SBS_NULL_TERMINATE(s);
+    SBS_NULLTERM(s);
     return 0;
 }
 
@@ -124,7 +126,7 @@ void sbstrim(sbs *s, const char *cset) {
     len = (sp > ep) ? 0 : ((ep - sp) + 1);
     if (s->str != sp) memmove(s, sp, len);
     s->len = len;
-    SBS_NULL_TERMINATE(s);
+    SBS_NULLTERM(s);
 }
 
 void sbsrange(sbs *s, ssize_t start, ssize_t end) {
@@ -152,7 +154,7 @@ void sbsrange(sbs *s, ssize_t start, ssize_t end) {
     }
     if (start && newlen) memmove(s->str, s->str + start, newlen);
     s->len = newlen;
-    SBS_NULL_TERMINATE(s);
+    SBS_NULLTERM(s);
 }
 
 /* Apply tolower() to every character of the sbs string 's'. */
@@ -280,39 +282,44 @@ int sbsfromlonglong(sbs *s, long long value) {
  * Returns the result as an sbs string. */
 int sbsjoin(sbs *s, const char **argv, int argc, const char *sep) {
     int j;
-    sbs buf;
-    sbscpyshl(s, &buf);
+    sbs backup;
+    sbscpyshl(s, &backup);
 
     for (j = 0; j < argc; j++) {
-        SBS_CHECK(sbscat(&buf, argv[j]));
+        SBS_CATCH(sbscat(s, argv[j]), goto fail);
         if (j != argc - 1) {
-            SBS_CHECK(sbscat(&buf, sep));
+            SBS_CATCH(sbscat(s, sep), goto fail);
         }
     }
-    sbscpyshl(&buf, s);
     return 0;
+fail:
+    sbscpyshl(&backup, s);
+    SBS_NULLTERM(s);  // fix the buffer
+    return -1;
 }
 
 int sbsjoinsbs(sbs *s, const sbs argv[], int argc, const char *sep,
                size_t seplen) {
     int j;
-    sbs buf;
-    sbscpyshl(s, &buf);
+    sbs backup;
+    sbscpyshl(s, &backup);
 
     for (j = 0; j < argc; j++) {
-        SBS_CHECK(sbscatsbs(&buf, &argv[j]));
+        SBS_CATCH(sbscatsbs(s, &argv[j]), goto fail);
         if (j != argc - 1) {
-            SBS_CHECK(sbscatlen(&buf, sep, seplen));
+            SBS_CATCH(sbscatlen(s, sep, seplen), goto fail);
         }
     }
-    sbscpyshl(&buf, s);
     return 0;
+fail:
+    sbscpyshl(&backup, s);
+    SBS_NULLTERM(s);  // fix the buffer
+    return -1;
 }
 
 static int sbscatvfmt(sbs *s, char const *fmt, va_list ap) {
-    sbs buf_base;
-    sbscpyshl(s, &buf_base);
-    sbs *buf = &buf_base;
+    sbs backup;
+    sbscpyshl(s, &backup);
     const char *f = fmt;
 
     f = fmt; /* Next format specifier byte to process. */
@@ -329,12 +336,12 @@ static int sbscatvfmt(sbs *s, char const *fmt, va_list ap) {
                 switch (next) {
                     case 's': {
                         str = va_arg(ap, char *);
-                        SBS_CHECK(sbscat(buf, str));
+                        SBS_CATCH(sbscat(s, str), goto fail);
                         break;
                     }
                     case 'S': {
                         sbs *tmp_sbs = va_arg(ap, sbs *);
-                        SBS_CHECK(sbscatsbs(buf, tmp_sbs));
+                        SBS_CATCH(sbscatsbs(s, tmp_sbs), goto fail);
                         break;
                     }
                     case 'i':
@@ -346,7 +353,7 @@ static int sbscatvfmt(sbs *s, char const *fmt, va_list ap) {
                         {
                             char numbuf[SBS_LLSTR_SIZE];
                             l = sbsll2str(numbuf, num);
-                            SBS_CHECK(sbscatlen(buf, numbuf, l));
+                            SBS_CATCH(sbscatlen(s, numbuf, l), goto fail);
                             break;
                         }
                         break;
@@ -359,26 +366,28 @@ static int sbscatvfmt(sbs *s, char const *fmt, va_list ap) {
                         {
                             char numbuf[SBS_LLSTR_SIZE];
                             l = sbsull2str(numbuf, unum);
-                            SBS_CHECK(sbscatlen(buf, numbuf, l));
+                            SBS_CATCH(sbscatlen(s, numbuf, l), goto fail);
                             break;
                         }
                         break;
                     default: { /* Handle %% and generally %<unknown>. */
-                        SBS_CHECK(sbscatlen(buf, &next, 1));
+                        SBS_CATCH(sbscatlen(s, &next, 1), goto fail);
                         break;
                     }
                 }
                 break;
             default: {
-                SBS_CHECK(sbscatlen(buf, f, 1));
+                SBS_CATCH(sbscatlen(s, f, 1), goto fail);
                 break;
             }
         }
         f++;
     }
-    va_end(ap);
-    sbscpyshl(buf, s);
     return 0;
+fail:
+    sbscpyshl(&backup, s);
+    SBS_NULLTERM(s);  // fix the buffer
+    return -1;
 }
 
 int sbscatfmt(sbs *s, char const *fmt, ...) {
@@ -386,47 +395,50 @@ int sbscatfmt(sbs *s, char const *fmt, ...) {
     va_start(ap, fmt);
     int err = sbscatvfmt(s, fmt, ap);
     va_end(ap);
-    SBS_NULL_TERMINATE(s);  // if it fails cleanup
+    SBS_NULLTERM(s);  // if it fails cleanup
     return err;
 }
 
-int sbscatrepr(sbs *sb, const char *p, size_t len) {
-    sbs sdata;
-    sbs *s = &sdata;
-    sbscpyshl(sb, s);
-    SBS_CHECK(sbscatlen(s, "\"", 1));
+int sbscatrepr(sbs *s, const char *p, size_t len) {
+    sbs backup;
+    sbscpyshl(s, &backup);
+    SBS_CATCH(sbscatlen(s, "\"", 1), goto fail);
     while (len--) {
         switch (*p) {
             case '\\':
             case '"':
-                SBS_CHECK(sbscatprintf(s, "\\%c", *p));
+                SBS_CATCH(sbscatprintf(s, "\\%c", *p), goto fail);
                 break;
             case '\n':
-                SBS_CHECK(sbscatlen(s, "\\n", 2));
+                SBS_CATCH(sbscatlen(s, "\\n", 2), goto fail);
                 break;
             case '\r':
-                SBS_CHECK(sbscatlen(s, "\\r", 2));
+                SBS_CATCH(sbscatlen(s, "\\r", 2), goto fail);
                 break;
             case '\t':
-                SBS_CHECK(sbscatlen(s, "\\t", 2));
+                SBS_CATCH(sbscatlen(s, "\\t", 2), goto fail);
                 break;
             case '\a':
-                SBS_CHECK(sbscatlen(s, "\\a", 2));
+                SBS_CATCH(sbscatlen(s, "\\a", 2), goto fail);
                 break;
             case '\b':
-                SBS_CHECK(sbscatlen(s, "\\b", 2));
+                SBS_CATCH(sbscatlen(s, "\\b", 2), goto fail);
                 break;
             default:
                 if (isprint(*p)) {
-                    SBS_CHECK(sbscatprintf(s, "%c", *p));
+                    SBS_CATCH(sbscatprintf(s, "%c", *p), goto fail);
                 } else {
-                    SBS_CHECK(sbscatprintf(s, "\\x%02x", (unsigned char)*p));
+                    SBS_CATCH(sbscatprintf(s, "\\x%02x", (unsigned char)*p),
+                              goto fail);
                 }
                 break;
         }
         p++;
     }
-    SBS_CHECK(sbscatlen(s, "\"", 1));
-    sbscpyshl(s, sb);
+    SBS_CATCH(sbscatlen(s, "\"", 1), goto fail);
     return 0;
+fail:
+    sbscpyshl(&backup, s);
+    SBS_NULLTERM(s);  // fix string buffer
+    return -1;
 }
