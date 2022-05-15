@@ -45,7 +45,6 @@ int sbscat(sbs *s, const char *t);
 int sbscatsbs(sbs *s, const sbs *t);
 int sbscpylen(sbs *s, const char *t, size_t len);
 int sbscpy(sbs *s, const char *t);
-int sbscpysbs(const sbs *s, sbs *d);
 int sbsfromlonglong(sbs *s, long long value);
 
 // format
