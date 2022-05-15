@@ -113,7 +113,8 @@ libsbs.sbsresize.errcheck = errcheck
 
 def sbsresize(s: sbs, *, size: int) -> sbs:
     buf = ct.create_string_buffer(size)
-    libsbs.sbsresize(ct.byref(s), ct.byref(buf), ct.c_size_t(buf))
+    libsbs.sbsresize(ct.byref(s), ct.byref(buf), ct.c_size_t(size))
+    s._buffer = buf  # prevent gc
     return s
 
 

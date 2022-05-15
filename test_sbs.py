@@ -7,6 +7,22 @@ def test_sbsnew() -> None:
     sbs.sbsnew("test", size=12)
 
 
+def test_sbsresize() -> None:
+    text = sbs.sbsnew("test", size=24)
+
+    with pytest.raises(sbs.SBSException):
+        sbs.sbsresize(text, size=1)
+
+    sbs.sbsresize(text, size=8)
+    assert text.size == 8
+
+    sbs.sbsresize(text, size=100)
+    assert text.size == 100
+
+    sbs.sbscat(text, "hello" * 10)
+    assert text.str == "test" + "hello" * 10
+
+
 def test_sbscatlen() -> None:
     text = sbs.sbsnew("test", size=18)
     text = sbs.sbscatlen(text, b"test\x00cont")
