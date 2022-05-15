@@ -395,7 +395,6 @@ int sbscatfmt(sbs *s, char const *fmt, ...) {
     va_start(ap, fmt);
     int err = sbscatvfmt(s, fmt, ap);
     va_end(ap);
-    SBS_NULLTERM(s);  // if it fails cleanup
     return err;
 }
 
