@@ -1,5 +1,5 @@
 import ctypes as ct
-from typing import Any, Union
+from typing import Any, Sequence, Union
 
 libsbs = ct.CDLL("libsbs.so")
 
@@ -80,22 +80,6 @@ def sbsdup(s: sbs, d: sbs) -> sbs:
     return d
 
 
-libsbs.sbscatlen.errcheck = errcheck
-
-
-def sbscatlen(s: sbs, text: bytes) -> sbs:
-    libsbs.sbscatlen(ct.byref(s), text, ct.c_size_t(len(text)))
-    return s
-
-
-libsbs.sbscat.errcheck = errcheck
-
-
-def sbscat(s: sbs, text: str) -> sbs:
-    libsbs.sbscat(ct.byref(s), text.encode())
-    return s
-
-
 libsbs.sbscatfmt.errcheck = errcheck
 
 
@@ -120,5 +104,141 @@ def sbscatprintf(s: sbs, format: str, *args: Any) -> sbs:
         ct.byref(s),
         format.encode(),
         *args,
+    )
+    return s
+
+
+libsbs.sbsresize.errcheck = errcheck
+
+
+def sbsresize(s: sbs, *, size: int) -> sbs:
+    buf = ct.create_string_buffer(size)
+    libsbs.sbsresize(ct.byref(s), ct.byref(buf), ct.c_size_t(buf))
+    return s
+
+
+libsbs.sbscatlen.errcheck = errcheck
+
+
+def sbscatlen(s: sbs, text: bytes) -> sbs:
+    libsbs.sbscatlen(ct.byref(s), text, ct.c_size_t(len(text)))
+    return s
+
+
+libsbs.sbscat.errcheck = errcheck
+
+
+def sbscat(s: sbs, text: str) -> sbs:
+    libsbs.sbscat(ct.byref(s), text.encode())
+    return s
+
+
+libsbs.sbscatsbs.errcheck = errcheck
+
+
+def sbscatsbs(s: sbs, t: sbs) -> sbs:
+    libsbs.sbscatsbs(ct.byref(s), ct.byref(t))
+    return s
+
+
+libsbs.sbscpylen.errcheck = errcheck
+
+
+def sbscpylen(s: sbs, text: bytes) -> sbs:
+    libsbs.sbscpylen(ct.byref(s), text, ct.c_size_t(len(text)))
+    return s
+
+
+libsbs.sbscpy.errcheck = errcheck
+
+
+def sbscpy(s: sbs, text: str) -> sbs:
+    libsbs.sbscpy(ct.byref(s), text)
+    return s
+
+
+libsbs.sbstrim.restype = None
+
+
+def sbstrim(s: sbs, cset: str) -> sbs:
+    libsbs.sbstrim(ct.byref(s), cset.encode())
+    return s
+
+
+libsbs.sbsrange.restype = None
+
+
+def sbsrange(s: sbs, start: int, end: int) -> sbs:
+    libsbs.sbsrange(ct.byref(s), ct.c_size_t(start), ct.c_size_t(end))
+    return s
+
+
+libsbs.sbsupdatelen.restype = None
+
+
+def sbsupdatelen(s: sbs) -> sbs:
+    libsbs.sbsupdatelen(ct.byref(s))
+    return s
+
+
+libsbs.sbsclear.restype = None
+
+
+def sbsclear(s: sbs) -> sbs:
+    libsbs.sbsclear(ct.byref(s))
+    return s
+
+
+def sbscmp(s1: sbs, s2: sbs) -> int:
+    return libsbs.sbsclear(ct.byref(s1), ct.byref(s2))
+
+
+libsbs.sbstolower.restype = None
+
+
+def sbstolower(s: sbs) -> sbs:
+    libsbs.sbstolower(ct.byref(s))
+    return s
+
+
+libsbs.sbstoupper.restype = None
+
+
+def sbstoupper(s: sbs) -> sbs:
+    libsbs.sbstoupper(ct.byref(s))
+    return s
+
+
+libsbs.sbsfromlonglong.errcheck = errcheck
+
+
+def sbsfromlonglong(s: sbs, value: int) -> sbs:
+    libsbs.sbsfromlonglong(ct.byref(s), ct.c_longlong(value))
+    return s
+
+
+libsbs.sbsjoin.errcheck = errcheck
+
+
+def sbsjoin(s: sbs, args: Sequence[str], *, sep: str) -> sbs:
+    argc = len(args)
+    argv = (ct.c_char_p * argc)(*(arg.encode() for arg in args))
+    libsbs.sbsjoin(
+        ct.byref(s),
+        ct.byref(argv),
+        ct.c_int(argc),
+        sep.encode(),
+    )
+    return s
+
+
+libsbs.sbsjoinsbs.errcheck = errcheck
+
+
+def sbsjoinsbs(s: sbs, args: Sequence[sbs], *, sep: str) -> sbs:
+    argc = len(args)
+    argv = (sbs * argc)(*args)
+    libsbs.sbsjoinsbs(
+        ct.byref(s), ct.byref(argv), ct.c_int(argc), sep.encode(), ct.c_size_t(len(sep))
     )
     return s

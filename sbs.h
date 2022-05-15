@@ -37,6 +37,8 @@ static inline char *sbsstrend(sbs s)
 
 static inline void sbssetlen(sbs *s, size_t len)
 {
+    if (s->len >= s->size)
+        return;
     s->len = len;
 }
 
@@ -74,7 +76,6 @@ int sbscmp(const sbs *s1, const sbs *s2);
 void sbstolower(sbs *s);
 void sbstoupper(sbs *s);
 int sbsfromlonglong(sbs *s, long long value);
-int sbscatrepr(sbs *s, const char *p, size_t len);
 void sbsmapchars(sbs *s, const char *from, const char *to, size_t setlen);
 int sbsjoin(sbs *s, char **argv, int argc, const char *sep);
 int sbsjoinsbs(sbs *s, sbs argv[], int argc, const char *sep, size_t seplen);

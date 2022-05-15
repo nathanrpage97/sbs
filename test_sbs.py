@@ -55,3 +55,20 @@ def test_sbsdup() -> None:
     with pytest.raises(sbs.SBSException):
         dest = sbs.sbsempty(size=1)
         sbs.sbsdup(text, dest)
+
+
+def test_sbsjoin() -> None:
+    text = sbs.sbsempty(size=48)
+
+    text = sbs.sbsjoin(text, ["cool", "123"], sep="|")
+
+    assert text.str == "cool|123"
+
+
+def test_sbsjoinsbs() -> None:
+    text = sbs.sbsempty(size=48)
+    text1 = sbs.sbsnew("cool", size=8)
+    text2 = sbs.sbsnew("123", size=24)
+    text = sbs.sbsjoinsbs(text, [text1, text2], sep="|")
+
+    assert text.str == "cool|123"
