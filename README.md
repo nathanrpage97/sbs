@@ -4,7 +4,7 @@ A reformulation of [SDS](https://github.com/antirez/sds) to use string buffers.
 
 ## Motivation
 
-Have an SDS API for short term bounded strings without having to handle freeing.
+Have an SDS API for short term bounded strings without heap allocation.
 
 ## Differences from SDS
 
