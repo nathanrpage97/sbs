@@ -16,32 +16,32 @@ Have an SDS API for short term bounded strings without heap allocation.
 
 A quick reference for those familiar with the SDS API:
 
-| SDS               | SBS               | Additional Info                                                       |
-| ----------------- | ----------------- | --------------------------------------------------------------------- |
-| `sdsnewlen`       | `sbsnewlen`       | -                                                                     |
-| `sdsnew`          | `sbsnew`          | -                                                                     |
-| `sdsempty`        | `sbsempty`        | -                                                                     |
-| `sdsdup`          | `sbsdup`          | -                                                                     |
-| `sdslen`          | `sbslen`          | -                                                                     |
-| `sdsfree`         | ❌                | No resource management                                                |
-| `sdscatlen`       | `sbscatlen`       | -                                                                     |
-| `sdscat`          | `sbscat`          | -                                                                     |
-| `sdscatsds`       | `sbscatsbs`       | -                                                                     |
-| `sdsgrowzero`     | `sbsresize`       | User provides a new buffer to & the extra buffer space is not zero'ed |
-| `sdscatprintf`    | `sbscatprintf`    | -                                                                     |
-| `sdscatvprintf`   | `sbscatvprintf`   | -                                                                     |
-| `sdscatfmt`       | `sbscatfmt`       | -                                                                     |
-| `sdsfromlonglong` | `sbsfromlonglong` | Must be on an initialized sbs                                         |
-| `sdstrim`         | `sbstrim`         | -                                                                     |
-| `sdsrange`        | `sbsrange`        | -                                                                     |
-| `sdscpylen`       | `sbscpylen`       | -                                                                     |
-| `sdscpy`          | `sbscpy`          | -                                                                     |
-| `sdscatrepr`      | `sbscatrepr`      | -                                                                     |
-| `sdssplitlen`     | ❌                | May later be added via an iterator?                                   |
-| `sdsfreesplitres` | ❌                | No resource management                                                |
-| `sdssplitargs`    | ❌                | May later be added via an iterator?                                   |
-| `sdsjoin`         | `sbsjoin`         | -                                                                     |
-| `sdsjoinsds`      | `sbsjoinsbs`      | -                                                                     |
+| SDS               | SBS                     | Additional Info                                               |
+| ----------------- | ----------------------- | ------------------------------------------------------------- |
+| `sdsnewlen`       | `sbsnewlen`/`SBSNEWLEN` | -                                                             |
+| `sdsnew`          | `sbsnew`/`SBSNEW`       | -                                                             |
+| `sdsempty`        | `sbsempty`/`SBSEMPTY`   | -                                                             |
+| `sdsdup`          | `sbsdup`/`SBSDUP`       | -                                                             |
+| `sdslen`          | `sbslen`                | -                                                             |
+| `sdsfree`         | ❌                      | No resource management                                        |
+| `sdscatlen`       | `sbscatlen`             | -                                                             |
+| `sdscat`          | `sbscat`                | -                                                             |
+| `sdscatsds`       | `sbscatsbs`             | -                                                             |
+| `sdsgrowzero`     | `sbsresize`/`SBSRESIZE` | Provides a new buffer & the extra buffer space is not zero'ed |
+| `sdscatprintf`    | `sbscatprintf`          | -                                                             |
+| `sdscatvprintf`   | `sbscatvprintf`         | -                                                             |
+| `sdscatfmt`       | `sbscatfmt`             | -                                                             |
+| `sdsfromlonglong` | `sbsfromlonglong`       | Must be on an initialized sbs                                 |
+| `sdstrim`         | `sbstrim`               | -                                                             |
+| `sdsrange`        | `sbsrange`              | -                                                             |
+| `sdscpylen`       | `sbscpylen`             | -                                                             |
+| `sdscpy`          | `sbscpy`                | -                                                             |
+| `sdscatrepr`      | `sbscatrepr`            | -                                                             |
+| `sdssplitlen`     | ❌                      | May later be added via an iterator?                           |
+| `sdsfreesplitres` | ❌                      | No resource management                                        |
+| `sdssplitargs`    | ❌                      | May later be added via an iterator?                           |
+| `sdsjoin`         | `sbsjoin`               | -                                                             |
+| `sdsjoinsds`      | `sbsjoinsbs`            | -                                                             |
 
 ## Error handling
 
