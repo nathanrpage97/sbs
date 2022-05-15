@@ -7,52 +7,57 @@
 
 #define SBS_NULL_TERMINATE(s) (s).str[(s).len] = '\0'
 
+#define SBS_CHECK(func)                 \
+    do {                                \
+        sbs *state = (func);            \
+        if (state == NULL) return NULL; \
+    } while (0);
+
 static void sbsclone(sbs *src, sbs *dst) {
     dst->size = src->size;
     dst->len = src->len;
     dst->str = src->str;
 }
 
-int sbsnewlen(sbs *s, const void *init, size_t initlen, char buffer[],
-              size_t buffer_size) {
+sbs *sbsnewlen(sbs *s, const void *init, size_t initlen, char buffer[],
+               size_t buffer_size) {
     if (initlen >= buffer_size) {
-        return -1;
+        return NULL;
     }
     s->str = buffer;
     s->size = buffer_size;
     s->len = initlen;
     memcpy(s->str, init, initlen);
     SBS_NULL_TERMINATE(*s);
-    return 0;
-}
-
-int sbsnew(sbs *s, const char *init, char buffer[], size_t buffer_size) {
-    return sbsnewlen(s, init, strlen(init), buffer, buffer_size);
-}
-
-sbs sbsempty(char *buffer, size_t buffer_size) {
-    sbs s;
-    // this will never fail
-    sbsnewlen(&s, "", 0, buffer, buffer_size);
     return s;
 }
 
-int sbsdup(const sbs *s, sbs *d) {
-    if (s->len >= d->size) {
-        return -1;
-    }
-    return sbsnewlen(d, s->str, s->len, d->str, d->size);
+sbs *sbsnew(sbs *s, const char *init, char buffer[], size_t buffer_size) {
+    return sbsnewlen(s, init, strlen(init), buffer, buffer_size);
 }
 
-int sbsresize(sbs *s, char buffer[], size_t buffer_size) {
+sbs *sbsempty(sbs *s, char *buffer, size_t buffer_size) {
+    // this will never fail
+    sbsnewlen(s, "", 0, buffer, buffer_size);
+    return s;
+}
+
+// int sbsdup(const sbs *s, sbs *d) {
+//     if (s->len >= d->size) {
+//         return -1;
+//     }
+//     return sbsnewlen(d, s->str, s->len, d->str, d->size);
+// }
+
+sbs *sbsresize(sbs *s, char buffer[], size_t buffer_size) {
     if (buffer_size <= s->len) {
-        return -1;
+        return NULL;
     }
     memcpy(buffer, s->str, s->len);
     s->size = buffer_size;
     s->str = buffer;
     SBS_NULL_TERMINATE(*s);
-    return 0;
+    return s;
 }
 
 void sbsupdatelen(sbs *s) { s->len = strlen(s->str); }
@@ -62,47 +67,47 @@ void sbsclear(sbs *s) {
     SBS_NULL_TERMINATE(*s);
 }
 
-int sbscatlen(sbs *s, const void *t, size_t len) {
-    if (len >= sbssizerem(*s)) {
-        return -1;
+sbs *sbscatlen(sbs *s, const void *t, size_t len) {
+    if (len >= sbssizerem(s)) {
+        return NULL;
     }
-    memcpy(sbsstrend(*s), t, len);
+    memcpy(sbsstrend(s), t, len);
     s->len += len;
     SBS_NULL_TERMINATE(*s);
-    return 0;
+    return s;
 }
 
-int sbscat(sbs *s, const char *t) { return sbscatlen(s, t, strlen(t)); }
+sbs *sbscat(sbs *s, const char *t) { return sbscatlen(s, t, strlen(t)); }
 
-int sbscatsbs(sbs *s, const sbs *t) { return sbscatlen(s, t->str, t->len); }
+sbs *sbscatsbs(sbs *s, const sbs *t) { return sbscatlen(s, t->str, t->len); }
 
-int sbscpylen(sbs *s, const char *t, size_t len) {
+sbs *sbscpylen(sbs *s, const char *t, size_t len) {
     if (len >= s->size) {
-        return -1;
+        return NULL;
     }
     s->len = len;
     memcpy(s->str, t, len);
     SBS_NULL_TERMINATE(*s);
-    return 0;
+    return s;
 }
 
-int sbscpy(sbs *s, const char *t) { return sbscpylen(s, t, strlen(t)); }
+sbs *sbscpy(sbs *s, const char *t) { return sbscpylen(s, t, strlen(t)); }
 
 /* Like sbscatprintf() but gets va_list instead of being variadic. */
-int sbscatvprintf(sbs *s, const char *fmt, va_list ap) {
-    size_t bufsize = sbssizerem(*s);
-    int n = vsnprintf(sbsstrend(*s), bufsize, fmt, ap);
+sbs *sbscatvprintf(sbs *s, const char *fmt, va_list ap) {
+    size_t bufsize = sbssizerem(s);
+    int n = vsnprintf(sbsstrend(s), bufsize, fmt, ap);
     if (n >= bufsize) {
-        return -1;
+        return NULL;
     }
     s->len += n;
     SBS_NULL_TERMINATE(*s);
-    return 0;
+    return s;
 }
 
-int sbscatprintf(sbs *s, const char *fmt, ...) {
+sbs *sbscatprintf(sbs *s, const char *fmt, ...) {
     va_list ap;
-    int t;
+    sbs *t;
     va_start(ap, fmt);
     t = sbscatvprintf(s, fmt, ap);
     va_end(ap);
@@ -114,7 +119,7 @@ void sbstrim(sbs *s, const char *cset) {
     size_t len;
 
     sp = start = s->str;
-    ep = end = s->str + sbslen(*s) - 1;
+    ep = end = s->str + sbslen(s) - 1;
     while (sp <= end && strchr(cset, *sp)) sp++;
     while (ep > sp && strchr(cset, *ep)) ep--;
     len = (sp > ep) ? 0 : ((ep - sp) + 1);
@@ -124,7 +129,7 @@ void sbstrim(sbs *s, const char *cset) {
 }
 
 void sbsrange(sbs *s, ssize_t start, ssize_t end) {
-    size_t newlen, len = sbslen(*s);
+    size_t newlen, len = sbslen(s);
 
     if (len == 0) return;
     if (start < 0) {
@@ -153,20 +158,20 @@ void sbsrange(sbs *s, ssize_t start, ssize_t end) {
 
 /* Apply tolower() to every character of the sbs string 's'. */
 void sbstolower(sbs *s) {
-    for (size_t j = 0; j < sbslen(*s); j++) s->str[j] = tolower(s->str[j]);
+    for (size_t j = 0; j < sbslen(s); j++) s->str[j] = tolower(s->str[j]);
 }
 
 /* Apply tolower() to every character of the sbs string 's'. */
 void sbstoupper(sbs *s) {
-    for (size_t j = 0; j < sbslen(*s); j++) s->str[j] = toupper(s->str[j]);
+    for (size_t j = 0; j < sbslen(s); j++) s->str[j] = toupper(s->str[j]);
 }
 
 int sbscmp(const sbs *s1, const sbs *s2) {
     size_t l1, l2, minlen;
     int cmp;
 
-    l1 = sbslen(*s1);
-    l2 = sbslen(*s2);
+    l1 = sbslen(s1);
+    l2 = sbslen(s2);
     minlen = (l1 < l2) ? l1 : l2;
     cmp = memcmp(s1->str, s2->str, minlen);
     if (cmp == 0) return l1 > l2 ? 1 : (l1 < l2 ? -1 : 0);
@@ -183,7 +188,7 @@ int sbscmp(const sbs *s1, const sbs *s2) {
  * The function returns the sbs string pointer, that is always the same
  * as the input pointer since no resize is needed. */
 void sbsmapchars(sbs *s, const char *from, const char *to, size_t setlen) {
-    size_t j, i, l = sbslen(*s);
+    size_t j, i, l = sbslen(s);
 
     for (j = 0; j < l; j++) {
         for (i = 0; i < setlen; i++) {
@@ -266,7 +271,7 @@ static int sbsull2str(char *s, unsigned long long v) {
  *
  * sbscatprintf(sbsempty(),"%lld\n", value);
  */
-int sbsfromlonglong(sbs *s, long long value) {
+sbs *sbsfromlonglong(sbs *s, long long value) {
     char buf[SBS_LLSTR_SIZE];
     int len = sbsll2str(buf, value);
     return sbscpylen(s, buf, len);
@@ -274,49 +279,37 @@ int sbsfromlonglong(sbs *s, long long value) {
 
 /* Join an array of C strings using the specified separator (also a C string).
  * Returns the result as an sbs string. */
-int sbsjoin(sbs *s, char **argv, int argc, const char *sep) {
+sbs *sbsjoin(sbs *s, char **argv, int argc, const char *sep) {
     int j;
     sbs buf;
     sbsclone(s, &buf);
 
     for (j = 0; j < argc; j++) {
-        int err = sbscat(&buf, argv[j]);
-        if (err != 0) {
-            return err;
-        }
+        SBS_CHECK(sbscat(&buf, argv[j]));
         if (j != argc - 1) {
-            err = sbscat(&buf, sep);
-            if (err != 0) {
-                return err;
-            }
+            SBS_CHECK(sbscat(&buf, sep));
         }
     }
     sbsclone(&buf, s);
-    return 0;
+    return s;
 }
 
-int sbsjoinsbs(sbs *s, sbs argv[], int argc, const char *sep, size_t seplen) {
+sbs *sbsjoinsbs(sbs *s, sbs argv[], int argc, const char *sep, size_t seplen) {
     int j;
     sbs buf;
     sbsclone(s, &buf);
 
     for (j = 0; j < argc; j++) {
-        int err = sbscatsbs(&buf, &argv[j]);
-        if (err != 0) {
-            return err;
-        }
+        SBS_CHECK(sbscatsbs(&buf, &argv[j]));
         if (j != argc - 1) {
-            err = sbscatlen(&buf, sep, seplen);
-            if (err != 0) {
-                return err;
-            }
+            SBS_CHECK(sbscatlen(&buf, sep, seplen));
         }
     }
     sbsclone(&buf, s);
-    return 0;
+    return s;
 }
 
-static int sbscatvfmt(sbs *s, char const *fmt, va_list ap) {
+static sbs *sbscatvfmt(sbs *s, char const *fmt, va_list ap) {
     sbs buf_base;
     sbsclone(s, &buf_base);
     sbs *buf = &buf_base;
@@ -336,18 +329,12 @@ static int sbscatvfmt(sbs *s, char const *fmt, va_list ap) {
                 switch (next) {
                     case 's': {
                         str = va_arg(ap, char *);
-                        int err = sbscat(buf, str);
-                        if (err != 0) {
-                            return -1;
-                        }
+                        SBS_CHECK(sbscat(buf, str));
                         break;
                     }
                     case 'S': {
                         sbs *tmp_sbs = va_arg(ap, sbs *);
-                        int err = sbscatsbs(buf, tmp_sbs);
-                        if (err != 0) {
-                            return -1;
-                        }
+                        SBS_CHECK(sbscatsbs(buf, tmp_sbs));
                         break;
                     }
                     case 'i':
@@ -359,10 +346,7 @@ static int sbscatvfmt(sbs *s, char const *fmt, va_list ap) {
                         {
                             char numbuf[SBS_LLSTR_SIZE];
                             l = sbsll2str(numbuf, num);
-                            int err = sbscatlen(buf, numbuf, l);
-                            if (err != 0) {
-                                return -1;
-                            }
+                            SBS_CHECK(sbscatlen(buf, numbuf, l));
                             break;
                         }
                         break;
@@ -375,27 +359,18 @@ static int sbscatvfmt(sbs *s, char const *fmt, va_list ap) {
                         {
                             char numbuf[SBS_LLSTR_SIZE];
                             l = sbsull2str(numbuf, unum);
-                            int err = sbscatlen(buf, numbuf, l);
-                            if (err != 0) {
-                                return -1;
-                            }
+                            SBS_CHECK(sbscatlen(buf, numbuf, l));
                             break;
                         }
                         break;
                     default: { /* Handle %% and generally %<unknown>. */
-                        int err = sbscatlen(buf, &next, 1);
-                        if (err != 0) {
-                            return -1;
-                        }
+                        SBS_CHECK(sbscatlen(buf, &next, 1));
                         break;
                     }
                 }
                 break;
             default: {
-                int err = sbscatlen(buf, f, 1);
-                if (err != 0) {
-                    return -1;
-                }
+                SBS_CHECK(sbscatlen(buf, f, 1));
                 break;
             }
         }
@@ -403,13 +378,13 @@ static int sbscatvfmt(sbs *s, char const *fmt, va_list ap) {
     }
     va_end(ap);
     sbsclone(buf, s);
-    return 0;
+    return s;
 }
 
-int sbscatfmt(sbs *s, char const *fmt, ...) {
+sbs *sbscatfmt(sbs *s, char const *fmt, ...) {
     va_list ap;
     va_start(ap, fmt);
-    int err = sbscatvfmt(s, fmt, ap);
+    sbs *state = sbscatvfmt(s, fmt, ap);
     va_end(ap);
-    return err;
+    return state;
 }

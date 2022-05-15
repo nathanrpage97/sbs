@@ -11,57 +11,63 @@ typedef struct {
     size_t size;
 } sbs;
 
-// sbs properties
-static inline char *sbsstr(sbs s) { return s.str; }
-static inline size_t sbslen(sbs s) { return s.len; }
+// Properties
+static inline char *sbsstr(sbs *s) { return s->str; }
+static inline size_t sbslen(const sbs *s) { return s->len; }
 
-static inline size_t sbssize(sbs s) { return s.len; }
-static inline size_t sbssizerem(sbs s) { return s.size - s.len; }
-static inline char *sbsstrend(sbs s) { return s.str + s.len; }
+static inline size_t sbssize(const sbs *s) { return s->len; }
+static inline size_t sbssizerem(const sbs *s) { return s->size - s->len; }
+static inline char *sbsstrend(const sbs *s) { return s->str + s->len; }
 
-static inline void sbssetlen(sbs *s, size_t len) {
-    if (s->len >= s->size) return;
-    s->len = len;
-}
+// creation
+sbs *sbsnewlen(sbs *s, const void *init, size_t initlen, char buffer[],
+               size_t buffer_size);
+#define SBSNEWLEN(init, initlen, size) \
+    sbsnewlen(&(sbs){}, init, initlen, (char[size]){0}, size)
+sbs *sbsnew(sbs *s, const char *init, char buffer[], size_t buffer_size);
+#define SBSNEW(init, size) sbsnew(&(sbs){0}, init, (char[size]){0}, size)
+sbs *sbsempty(sbs *s, char buffer[], size_t buffer_size);
+#define SBSEMPTY(size) sbsempty(&(sbs){0}, (char[size]){0}, size)
 
-int sbsnewlen(sbs *s, const void *init, size_t initlen, char buffer[],
-              size_t buffer_size);
-#define SBSNEWLEN(init, initlen, buffer) \
-    sbsnewlen(init, initlen, buffer, sizeof(buffer))
-int sbsnew(sbs *s, const char *init, char buffer[], size_t buffer_size);
-#define SBSNEW(s, init, buffer) sbsnew(s, init, buffer, sizeof(buffer))
-sbs sbsempty(char *buffer, size_t buffer_size);
-#define SBSEMPTY(buffer) sbsempty(buffer, sizeof(buffer))
-int sbsdup(const sbs *src, sbs *dest);
-#define SBSDUP(s, d) sbsdup(s, d)
+// fill
+sbs *sbscatlen(sbs *s, const void *t, size_t len);
+sbs *sbscat(sbs *s, const char *t);
+sbs *sbscatsbs(sbs *s, const sbs *t);
+sbs *sbscpylen(sbs *s, const char *t, size_t len);
+sbs *sbscpy(sbs *s, const char *t);
+sbs *sbscpysbs(const sbs *s, sbs *d);
 
-int sbsresize(sbs *s, char buffer[], size_t buffer_size);
-#define SBSRESIZE(s, buffer) sbsresize(s, buffer, sizeof(buffer_size))
-int sbscatlen(sbs *s, const void *t, size_t len);
-int sbscat(sbs *s, const char *t);
-int sbscatsbs(sbs *s, const sbs *t);
-int sbscpylen(sbs *s, const char *t, size_t len);
-int sbscpy(sbs *s, const char *t);
-
-int sbscatvprintf(sbs *s, const char *fmt, va_list ap);
+// format
+sbs *sbscatvprintf(sbs *s, const char *fmt, va_list ap);
 #ifdef __GNUC__
-int sbscatprintf(sbs *s, const char *fmt, ...)
+sbs *sbscatprintf(sbs *s, const char *fmt, ...)
     __attribute__((format(printf, 2, 3)));
 #else
-int sbscatprintf(sbs *s, const char *fmt, ...);
+sbs *sbscatprintf(sbs *s, const char *fmt, ...);
 #endif
+sbs *sbscatfmt(sbs *s, char const *fmt, ...);
 
-int sbscatfmt(sbs *s, char const *fmt, ...);
+// modify
 void sbstrim(sbs *s, const char *cset);
 void sbsrange(sbs *s, ssize_t start, ssize_t end);
-void sbsupdatelen(sbs *s);
 void sbsclear(sbs *s);
 int sbscmp(const sbs *s1, const sbs *s2);
 void sbstolower(sbs *s);
 void sbstoupper(sbs *s);
-int sbsfromlonglong(sbs *s, long long value);
+sbs *sbsfromlonglong(sbs *s, long long value);
 void sbsmapchars(sbs *s, const char *from, const char *to, size_t setlen);
-int sbsjoin(sbs *s, char **argv, int argc, const char *sep);
-int sbsjoinsbs(sbs *s, sbs argv[], int argc, const char *sep, size_t seplen);
+
+// join
+sbs *sbsjoin(sbs *s, char **argv, int argc, const char *sep);
+sbs *sbsjoinsbs(sbs *s, sbs argv[], int argc, const char *sep, size_t seplen);
+
+// escape hatch
+sbs *sbsresize(sbs *s, char buffer[], size_t buffer_size);
+#define SBSRESIZE(s, size) sbsresize(s, (char[size]){}, size)
+static inline void sbssetlen(sbs *s, size_t len) {
+    if (s->len >= s->size) return;
+    s->len = len;
+}
+void sbsupdatelen(sbs *s);
 
 #endif
