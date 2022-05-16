@@ -58,6 +58,23 @@ void test_sbscatsbs() {
     ASSERT_STRING_EQUALS(sbsstr(combined), "zero|first|second");
 }
 
+void test_sbscpy() {
+    sbs* text = SBS512("text to replace");
+    sbscpy(text, "newer text");
+    ASSERT_STRING_EQUALS("newer text", sbsstr(text));
+    sbs* fail = SBSEMPTY(4);
+    int err = sbscpy(fail, "too long text");
+    ASSERT("overflow copy", err != 0);
+    sbscpy(fail, "ok");
+    ASSERT_STRING_EQUALS("ok", sbsstr(fail));
+}
+
+void test_sbsfromlonglong() {
+    sbs* nums;
+    nums = SBSFROMLL(23);
+    ASSERT_STRING_EQUALS("23", sbsstr(nums));
+}
+
 int main() {
     RUN(test_sbsnewlen);
     RUN(test_sbsnew);
@@ -65,5 +82,7 @@ int main() {
     RUN(test_sbsdup);
     RUN(test_sbscat);
     RUN(test_sbscatsbs);
+    RUN(test_sbscpy);
+    RUN(test_sbsfromlonglong);
     return TEST_REPORT();
 }

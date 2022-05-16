@@ -272,10 +272,10 @@ static int sbsull2str(char *s, unsigned long long v) {
  *
  * sbscatprintf(sbsempty(),"%lld\n", value);
  */
-int sbsfromlonglong(sbs *s, long long value) {
+sbs *sbsfromlonglong(sbs *s, char buffer[64], long long value) {
     char buf[SBS_LLSTR_SIZE];
     int len = sbsll2str(buf, value);
-    return sbscpylen(s, buf, len);
+    return sbsnewlen(s, buf, len, buffer, 64);
 }
 
 /* Join an array of C strings using the specified separator (also a C string).

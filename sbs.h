@@ -30,6 +30,8 @@ sbs *sbsempty(sbs *s, char buffer[], size_t buffer_size);
 #define SBSEMPTY(size) sbsempty(&(sbs){0}, (char[size]){0}, size)
 sbs *sbsdup(sbs *s, sbs *d, char buffer[], size_t buffer_size);
 #define SBSDUP(s, size) sbsdup(s, &(sbs){0}, (char[size]){0}, size)
+sbs *sbsfromlonglong(sbs *s, char buffer[64], long long value);
+#define SBSFROMLL(value) sbsfromlonglong(&(sbs){0}, (char[64]){0}, value)
 
 // add some convenience creators
 #define SBS64(init) SBSNEW(init, 128)
@@ -45,7 +47,6 @@ int sbscat(sbs *s, const char *t);
 int sbscatsbs(sbs *s, const sbs *t);
 int sbscpylen(sbs *s, const char *t, size_t len);
 int sbscpy(sbs *s, const char *t);
-int sbsfromlonglong(sbs *s, long long value);
 
 // format
 int sbscatvprintf(sbs *s, const char *fmt, va_list ap);
