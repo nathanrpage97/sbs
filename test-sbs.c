@@ -1,3 +1,4 @@
+#include <limits.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -71,8 +72,37 @@ void test_sbscpy() {
 
 void test_sbsfromlonglong() {
     sbs* nums;
+    long long val;
     nums = SBSFROMLL(23);
     ASSERT_STRING_EQUALS("23", sbsstr(nums));
+    nums = SBSFROMLL(LLONG_MAX);
+    val = strtoll(sbsstr(nums), NULL, 10);
+    ASSERT_EQUALS(LLONG_MAX, val);
+    nums = SBSFROMLL(LLONG_MIN);
+    val = strtoll(sbsstr(nums), NULL, 10);
+    ASSERT_EQUALS(LLONG_MIN, val);
+}
+
+void test_sbscatprintf() {
+    sbs* text = SBS512("");
+    sbscatprintf(text, "%d %d", 23, 32);
+    ASSERT_STRING_EQUALS("23 32", sbsstr(text));
+
+    sbs* fail = SBSNEW("original", 24);
+    int err = sbscatprintf(fail, "%s", "this too long123");
+    ASSERT("fail too long", err != 0);
+    sbscatprintf(fail, "%s", "this is fine123");
+    ASSERT_STRING_EQUALS("originalthis is fine123", sbsstr(fail));
+}
+
+void test_sbscatfmt() {
+    sbs* text = SBS512("");
+    sbscatfmt(text, "%s %S %i %I %u %U%%", "normal", SBS64("test"), 123,
+              (long long)456, (unsigned)789, (unsigned long long)987);
+    ASSERT_STRING_EQUALS("normal test 123 456 789 987%", sbsstr(text));
+
+    // text = SBSNEW("", 32);
+    // sbscatfmt(text, "%s ")
 }
 
 int main() {
@@ -84,5 +114,7 @@ int main() {
     RUN(test_sbscatsbs);
     RUN(test_sbscpy);
     RUN(test_sbsfromlonglong);
+    RUN(test_sbscatprintf);
+    RUN(test_sbscatfmt);
     return TEST_REPORT();
 }
