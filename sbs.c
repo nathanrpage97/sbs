@@ -1,8 +1,11 @@
 #include "sbs.h"
 
 #include <ctype.h>
+#ifndef SBS_NO_FORMAT
 #include <stdarg.h>
 #include <stdio.h>
+#endif
+
 #include <string.h>
 
 #define SBS_NULLTERM(s) (s)->str[(s)->len] = '\0'
@@ -93,6 +96,7 @@ int sbscpylen(sbs *s, const char *t, size_t len) {
 
 int sbscpy(sbs *s, const char *t) { return sbscpylen(s, t, strlen(t)); }
 
+#ifndef SBS_NO_FORMAT
 /* Like sbscatprintf() but gets va_list instead of being variadic. */
 int sbscatvprintf(sbs *s, const char *fmt, va_list ap) {
     size_t bufsize = sbsavail(s);
@@ -114,6 +118,7 @@ int sbscatprintf(sbs *s, const char *fmt, ...) {
     va_end(ap);
     return t;
 }
+#endif
 
 void sbstrim(sbs *s, const char *cset) {
     char *start, *end, *sp, *ep;
@@ -238,7 +243,7 @@ static int sbsll2str(char *s, long long value) {
     }
     return l;
 }
-
+#ifndef SBS_NO_FORMAT
 /* Identical sbsll2str(), but for unsigned long long type. */
 static int sbsull2str(char *s, unsigned long long v) {
     char *p, aux;
@@ -267,7 +272,7 @@ static int sbsull2str(char *s, unsigned long long v) {
     }
     return l;
 }
-
+#endif
 /* Create an sbs string from a long long value. It is much faster than:
  *
  * sbscatprintf(sbsempty(),"%lld\n", value);
@@ -316,7 +321,7 @@ fail:
     SBS_NULLTERM(s);  // fix the buffer
     return -1;
 }
-
+#ifndef SBS_NO_FORMAT
 static int sbscatvfmt(sbs *s, char const *fmt, va_list ap) {
     sbs backup;
     sbscpyshl(s, &backup);
@@ -441,3 +446,4 @@ fail:
     SBS_NULLTERM(s);  // fix string buffer
     return -1;
 }
+#endif

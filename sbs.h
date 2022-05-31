@@ -1,7 +1,9 @@
-#ifndef __SBS_H
-#define __SBS_H
+#ifndef SBS_H
+#define SBS_H
 
+#ifndef SBS_NO_FORMAT
 #include <stdarg.h>
+#endif
 #include <stdint.h>
 #include <sys/types.h>
 
@@ -49,6 +51,7 @@ int sbscpylen(sbs *s, const char *t, size_t len);
 int sbscpy(sbs *s, const char *t);
 
 // format
+#ifndef SBS_NO_FORMAT
 int sbscatvprintf(sbs *s, const char *fmt, va_list ap);
 #ifdef __GNUC__
 int sbscatprintf(sbs *s, const char *fmt, ...)
@@ -58,6 +61,7 @@ int sbscatprintf(sbs *s, const char *fmt, ...);
 #endif
 int sbscatfmt(sbs *s, char const *fmt, ...);
 int sbscatrepr(sbs *s, const char *p, size_t len);
+#endif
 
 // modify
 void sbstrim(sbs *s, const char *cset);

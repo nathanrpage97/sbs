@@ -82,7 +82,7 @@ void test_sbsfromlonglong() {
     val = strtoll(sbsstr(nums), NULL, 10);
     ASSERT_EQUALS(LLONG_MIN, val);
 }
-
+#ifndef SBS_NO_FORMAT
 void test_sbscatprintf() {
     sbs* text = SBS512("");
     sbscatprintf(text, "%d %d", 23, 32);
@@ -104,7 +104,7 @@ void test_sbscatfmt() {
     // text = SBSNEW("", 32);
     // sbscatfmt(text, "%s ")
 }
-
+#endif
 int main() {
     RUN(test_sbsnewlen);
     RUN(test_sbsnew);
@@ -114,7 +114,9 @@ int main() {
     RUN(test_sbscatsbs);
     RUN(test_sbscpy);
     RUN(test_sbsfromlonglong);
+#ifndef SBS_NO_FORMAT
     RUN(test_sbscatprintf);
     RUN(test_sbscatfmt);
+#endif
     return TEST_REPORT();
 }

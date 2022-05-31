@@ -16,3 +16,7 @@ jobs:
         run: make
       - name: Test
         run: ./test-sbs
+      - name: Build (no format)
+        run: make NO_FORMAT=y
+      - name: Test (no format)
+        run: ./test-sbs
