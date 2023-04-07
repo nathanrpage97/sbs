@@ -8,9 +8,9 @@
 #include <sys/types.h>
 
 typedef struct {
-    char *str;
-    size_t len;
-    size_t size;
+  char *str;
+  size_t len;
+  size_t size;
 } sbs;
 
 // Properties
@@ -25,7 +25,7 @@ static inline char *sbsend(const sbs *s) { return s->str + s->len; }
 sbs *sbsnewlen(sbs *s, const void *init, size_t initlen, char buffer[],
                size_t buffer_size);
 #define SBSNEWLEN(init, initlen, size) \
-    sbsnewlen(&(sbs){0}, init, initlen, (char[size]){0}, size)
+  sbsnewlen(&(sbs){0}, init, initlen, (char[size]){0}, size)
 sbs *sbsnew(sbs *s, const char *init, char buffer[], size_t buffer_size);
 #define SBSNEW(init, size) sbsnew(&(sbs){0}, init, (char[size]){0}, size)
 sbs *sbsempty(sbs *s, char buffer[], size_t buffer_size);
@@ -78,12 +78,10 @@ int sbsjoinsbs(sbs *s, const sbs argv[], int argc, const char *sep,
                size_t seplen);
 
 // escape hatch
-int sbsresize(sbs *s, char buffer[], size_t buffer_size);
-#define SBSRESIZE(s, size) sbsresize(s, (char[size]){}, size)
 static inline void sbssetlen(sbs *s, size_t len) {
-    if (s->len >= s->size) return;
-    s->len = len;
-    s->str[s->len] = '\0';  // null terminate in case
+  if (s->len >= s->size) return;
+  s->len = len;
+  s->str[s->len] = '\0';  // null terminate in case
 }
 void sbsupdatelen(sbs *s);
 
