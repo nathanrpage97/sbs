@@ -21,22 +21,22 @@ typedef struct {
 
 // Properties
 
-static inline size_t sbslen(const sbs str) {
-  sbshdr *s = to_sbshdr(str);
-  return s->len;
+static inline size_t sbslen(const sbs s) {
+  sbshdr *h = to_sbshdr(s);
+  return h->len;
 }
 
-static inline size_t sbssize(const sbs str) {
-  sbshdr *s = to_sbshdr(str);
-  return s->size;
+static inline size_t sbssize(const sbs s) {
+  sbshdr *h = to_sbshdr(s);
+  return h->size;
 }
-static inline size_t sbsavail(const sbs str) {
-  sbshdr *s = to_sbshdr(str);
-  return s->size - s->len;
+static inline size_t sbsavail(const sbs s) {
+  sbshdr *h = to_sbshdr(s);
+  return h->size - h->len;
 }
-static inline char *sbsend(const sbs str) {
-  sbshdr *s = to_sbshdr(str);
-  return s->str + s->len;
+static inline char *sbsend(const sbs s) {
+  sbshdr *h = to_sbshdr(s);
+  return h->str + h->len;
 }
 
 // Initialization
