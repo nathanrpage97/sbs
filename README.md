@@ -14,7 +14,6 @@ checking.
 ## Differences from SDS
 
 - No heap allocation
-- String must be accessed via `sbsstr()`
 - sbs struct is mutated instead of returning a new struct
 
 ## SDS API Mapping
@@ -61,8 +60,9 @@ failed malloc.
 It is recommended that for creating new SBS strings that you use the built-in
 macros. These macros not only reduce boilerplate code, but also ensure that a
 buffer is not accidentally shared between multiple sbs structs. These macros
-rely on compound literals to allow the creation of anonymous structs on the
-stack.
+rely on
+[compound literals](https://gcc.gnu.org/onlinedocs/gcc/Compound-Literals.html)
+to allow the creation of anonymous structs on the stack.
 
 The preferred way for strings is using `SBSNEW()` or one of the preset sizes
 `SBS64()`/`SBS128()`/`SBS256()`/`SBS512()`/`SBS1024()`/`SBS2048()`.
@@ -70,12 +70,12 @@ The preferred way for strings is using `SBSNEW()` or one of the preset sizes
 ✅ Best Way
 
 ```c
-sbs* text1 = SBSNEW("so short to write", 64); // the size must be a literal
-sbs* text2 = SBS64("even shorter");
-sbs* text3 = SBS2048("bigger buffer");
+sbs text1 = SBSNEW("so short to write", 64); // the size must be a literal
+sbs text2 = SBS64("even shorter");
+sbs text3 = SBS2048("bigger buffer");
 
 char raw_data[] = {65, 65, 0x0, 0x2};
-sbs* data = SBSNEWLEN(raw_data, sizeof(raw_data), 64);
+sbs data = SBSNEWLEN(raw_data, sizeof(raw_data), 64);
 ```
 
 ⛔️ Bad Way
@@ -83,20 +83,18 @@ sbs* data = SBSNEWLEN(raw_data, sizeof(raw_data), 64);
 ```c
 // exposes the internal buffer, making it easy to accidentally reuse
 char buffer[64];
-sbs text; // all functions prefer the pointer as the value
-sbsnew(&text, "so much boilerplate", buffer, sizeof(buffer));
+ // all functions prefer the pointer as the value
+sbs text; = sbsnew(&text, "so much boilerplate", buffer, sizeof(buffer));
 ```
 
-The creation functions all return either `sbs*` or `NULL` if there is a failure.
+The creation functions all return either `sbs` or `NULL` if there is a failure.
 This is perhaps the only place a segfault may occur if you do not do a `NULL`
 check in scenarios where initialization will fail.
 
 ## Properties
 
-Although the structure is transparent, it is best practice to prefer the
-property functions.
+These provide information about the sbs string.
 
-- `sbsstr()`: returns the c string/bytes
 - `sbslen()`: returns the length of the c string/bytes
 - `sbssize()`: returns the size of the buffer
 - `sbsavail()`: returns the amount of space left in the buffer.
