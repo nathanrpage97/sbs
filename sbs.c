@@ -18,13 +18,6 @@
     }                          \
   } while (0);
 
-// create a shallow copy to allow updates
-static void sbscpyshl(sbshdr *src, sbshdr *dst) {
-  dst->size = src->size;
-  dst->len = src->len;
-  dst->str = src->str;
-}
-
 sbs sbsnewlen(const void *init, size_t initlen, char buffer[],
               size_t buffer_size) {
   if (initlen >= buffer_size - SBS_HEADERSIZE) {
@@ -294,8 +287,7 @@ sbs sbsfromlonglong(char buffer[64], long long value) {
 int sbsjoin(sbs str, const char **argv, int argc, const char *sep) {
   sbshdr *s = to_sbshdr(str);
   int j;
-  sbshdr backup;
-  sbscpyshl(s, &backup);
+  sbshdr backup = *s;
 
   for (j = 0; j < argc; j++) {
     SBS_CATCH(sbscat(str, argv[j]), goto fail);
@@ -305,7 +297,7 @@ int sbsjoin(sbs str, const char **argv, int argc, const char *sep) {
   }
   return 0;
 fail:
-  sbscpyshl(&backup, s);
+  *s = backup;
   SBS_NULLTERM(s);  // fix the buffer
   return -1;
 }
@@ -313,9 +305,9 @@ fail:
 int sbsjoinsbs(sbs str, const sbs argv[], int argc, const char *sep,
                size_t seplen) {
   int j;
-  sbshdr backup;
+
   sbshdr *s = to_sbshdr(str);
-  sbscpyshl(s, &backup);
+  sbshdr backup = *s;
 
   for (j = 0; j < argc; j++) {
     SBS_CATCH(sbscatsbs(str, argv[j]), goto fail);
@@ -325,15 +317,14 @@ int sbsjoinsbs(sbs str, const sbs argv[], int argc, const char *sep,
   }
   return 0;
 fail:
-  sbscpyshl(&backup, s);
+  *s = backup;
   SBS_NULLTERM(s);  // fix the buffer
   return -1;
 }
 #ifndef SBS_NO_FORMAT
 static int sbscatvfmt(sbs str, char const *fmt, va_list ap) {
-  sbshdr backup;
   sbshdr *s = to_sbshdr(str);
-  sbscpyshl(s, &backup);
+  sbshdr backup = *s;
   const char *f = fmt;
 
   f = fmt; /* Next format specifier byte to process. */
@@ -399,7 +390,7 @@ static int sbscatvfmt(sbs str, char const *fmt, va_list ap) {
   }
   return 0;
 fail:
-  sbscpyshl(&backup, s);
+  *s = backup;
   SBS_NULLTERM(s);  // fix the buffer
   return -1;
 }
@@ -413,9 +404,8 @@ int sbscatfmt(sbs s, char const *fmt, ...) {
 }
 
 int sbscatrepr(sbs s, const char *p, size_t len) {
-  sbshdr backup;
   sbshdr *str = to_sbshdr(s);
-  sbscpyshl(str, &backup);
+  sbshdr backup = *str;
   SBS_CATCH(sbscatlen(s, "\"", 1), goto fail);
   while (len--) {
     switch (*p) {
@@ -451,7 +441,7 @@ int sbscatrepr(sbs s, const char *p, size_t len) {
   SBS_CATCH(sbscatlen(s, "\"", 1), goto fail);
   return 0;
 fail:
-  sbscpyshl(&backup, str);
+  *str = backup;
   SBS_NULLTERM(str);  // fix string buffer
   return -1;
 }
