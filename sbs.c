@@ -8,7 +8,7 @@
 
 #include <string.h>
 
-#define SBS_NULLTERM(s) (s)->str[(s)->len] = '\0'
+#define SBS_NULLTERM(h) (h)->str[(h)->len] = '\0'
 
 #define SBS_CATCH(func, catch) \
   do {                         \
@@ -23,13 +23,13 @@ sbs sbsnewlen(const void *init, size_t initlen, char buffer[],
   if (initlen >= buffer_size - SBS_HEADERSIZE) {
     return NULL;
   }
-  sbshdr *s = (sbshdr *)(buffer);
-  s->str = buffer + SBS_HEADERSIZE;
-  s->size = buffer_size - SBS_HEADERSIZE;
-  s->len = initlen;
-  memcpy(s->str, init, initlen);
-  SBS_NULLTERM(s);
-  return s->str;
+  sbshdr *h = (sbshdr *)(buffer);
+  h->str = buffer + SBS_HEADERSIZE;
+  h->size = buffer_size - SBS_HEADERSIZE;
+  h->len = initlen;
+  memcpy(h->str, init, initlen);
+  SBS_NULLTERM(h);
+  return h->str;
 }
 
 sbs sbsnew(const char *init, char buffer[], size_t buffer_size) {
@@ -47,24 +47,24 @@ sbs sbsdup(sbs s, char buffer[], size_t buffer_size) {
 }
 
 void sbsupdatelen(sbs str) {
-  sbshdr *s = to_sbshdr(str);
-  s->len = strlen(s->str);
+  sbshdr *h = to_sbshdr(str);
+  h->len = strlen(h->str);
 }
 
 void sbsclear(sbs str) {
-  sbshdr *s = to_sbshdr(str);
-  s->len = 0;
-  SBS_NULLTERM(s);
+  sbshdr *h = to_sbshdr(str);
+  h->len = 0;
+  SBS_NULLTERM(h);
 }
 
 int sbscatlen(sbs str, const void *t, size_t len) {
-  sbshdr *s = to_sbshdr(str);
+  sbshdr *h = to_sbshdr(str);
   if (len >= sbsavail(str)) {
     return -1;
   }
   memcpy(sbsend(str), t, len);
-  s->len += len;
-  SBS_NULLTERM(s);
+  h->len += len;
+  SBS_NULLTERM(h);
   return 0;
 }
 
@@ -76,13 +76,13 @@ int sbscatsbs(sbs s, const sbs tstr) {
 }
 
 int sbscpylen(sbs str, const char *t, size_t len) {
-  sbshdr *s = to_sbshdr(str);
-  if (len >= s->size) {
+  sbshdr *h = to_sbshdr(str);
+  if (len >= h->size) {
     return -1;
   }
-  s->len = len;
-  memcpy(s->str, t, len);
-  SBS_NULLTERM(s);
+  h->len = len;
+  memcpy(h->str, t, len);
+  SBS_NULLTERM(h);
   return 0;
 }
 
@@ -91,15 +91,15 @@ int sbscpy(sbs s, const char *t) { return sbscpylen(s, t, strlen(t)); }
 #ifndef SBS_NO_FORMAT
 /* Like sbscatprintf() but gets va_list instead of being variadic. */
 int sbscatvprintf(sbs str, const char *fmt, va_list ap) {
-  sbshdr *s = to_sbshdr(str);
+  sbshdr *h = to_sbshdr(str);
   size_t bufsize = sbsavail(str);
   int n = vsnprintf(sbsend(str), bufsize, fmt, ap);
   if (n >= bufsize) {
-    SBS_NULLTERM(s);
+    SBS_NULLTERM(h);
     return -1;
   }
-  s->len += n;
-  SBS_NULLTERM(s);
+  h->len += n;
+  SBS_NULLTERM(h);
   return 0;
 }
 
@@ -114,22 +114,22 @@ int sbscatprintf(sbs s, const char *fmt, ...) {
 #endif
 
 void sbstrim(sbs str, const char *cset) {
-  sbshdr *s = to_sbshdr(str);
+  sbshdr *h = to_sbshdr(str);
   char *start, *end, *sp, *ep;
   size_t len;
 
-  sp = start = s->str;
-  ep = end = s->str + sbslen(str) - 1;
+  sp = start = h->str;
+  ep = end = h->str + sbslen(str) - 1;
   while (sp <= end && strchr(cset, *sp)) sp++;
   while (ep > sp && strchr(cset, *ep)) ep--;
   len = (sp > ep) ? 0 : ((ep - sp) + 1);
-  if (s->str != sp) memmove(s, sp, len);
-  s->len = len;
-  SBS_NULLTERM(s);
+  if (h->str != sp) memmove(h->str, sp, len);
+  h->len = len;
+  SBS_NULLTERM(h);
 }
 
 void sbsrange(sbs str, ssize_t start, ssize_t end) {
-  sbshdr *s = to_sbshdr(str);
+  sbshdr *h = to_sbshdr(str);
   size_t newlen, len = sbslen(str);
 
   if (len == 0) return;
@@ -152,33 +152,33 @@ void sbsrange(sbs str, ssize_t start, ssize_t end) {
   } else {
     start = 0;
   }
-  if (start && newlen) memmove(s->str, s->str + start, newlen);
-  s->len = newlen;
-  SBS_NULLTERM(s);
+  if (start && newlen) memmove(h->str, h->str + start, newlen);
+  h->len = newlen;
+  SBS_NULLTERM(h);
 }
 
 /* Apply tolower() to every character of the sbs string 's'. */
 void sbstolower(sbs str) {
-  sbshdr *s = to_sbshdr(str);
-  for (size_t j = 0; j < sbslen(str); j++) s->str[j] = (char)tolower(s->str[j]);
+  sbshdr *h = to_sbshdr(str);
+  for (size_t j = 0; j < sbslen(str); j++) h->str[j] = (char)tolower(h->str[j]);
 }
 
 /* Apply tolower() to every character of the sbs string 's'. */
 void sbstoupper(sbs str) {
-  sbshdr *s = to_sbshdr(str);
-  for (size_t j = 0; j < sbslen(str); j++) s->str[j] = (char)toupper(s->str[j]);
+  sbshdr *h = to_sbshdr(str);
+  for (size_t j = 0; j < sbslen(str); j++) h->str[j] = (char)toupper(h->str[j]);
 }
 
 int sbscmp(const sbs str1, const sbs str2) {
-  sbshdr *s1 = to_sbshdr(str1);
-  sbshdr *s2 = to_sbshdr(str2);
+  sbshdr *h1 = to_sbshdr(str1);
+  sbshdr *h2 = to_sbshdr(str2);
   size_t l1, l2, minlen;
   int cmp;
 
   l1 = sbslen(str1);
   l2 = sbslen(str2);
   minlen = (l1 < l2) ? l1 : l2;
-  cmp = memcmp(s1->str, s2->str, minlen);
+  cmp = memcmp(h1->str, h2->str, minlen);
   if (cmp == 0) return l1 > l2 ? 1 : (l1 < l2 ? -1 : 0);
   return cmp;
 }
@@ -194,11 +194,11 @@ int sbscmp(const sbs str1, const sbs str2) {
  * as the input pointer since no resize is needed. */
 void sbsmapchars(sbs str, const char *from, const char *to, size_t setlen) {
   size_t j, i, l = sbslen(str);
-  sbshdr *s = to_sbshdr(str);
+  sbshdr *h = to_sbshdr(str);
   for (j = 0; j < l; j++) {
     for (i = 0; i < setlen; i++) {
-      if (s->str[j] == from[i]) {
-        s->str[j] = to[i];
+      if (h->str[j] == from[i]) {
+        h->str[j] = to[i];
         break;
       }
     }
@@ -285,9 +285,9 @@ sbs sbsfromlonglong(char buffer[64], long long value) {
 /* Join an array of C strings using the specified separator (also a C string).
  * Returns the result as an sbs string. */
 int sbsjoin(sbs str, const char **argv, int argc, const char *sep) {
-  sbshdr *s = to_sbshdr(str);
+  sbshdr *h = to_sbshdr(str);
   int j;
-  sbshdr backup = *s;
+  sbshdr backup = *h;
 
   for (j = 0; j < argc; j++) {
     SBS_CATCH(sbscat(str, argv[j]), goto fail);
@@ -297,8 +297,8 @@ int sbsjoin(sbs str, const char **argv, int argc, const char *sep) {
   }
   return 0;
 fail:
-  *s = backup;
-  SBS_NULLTERM(s);  // fix the buffer
+  *h = backup;
+  SBS_NULLTERM(h);  // fix the buffer
   return -1;
 }
 
@@ -306,8 +306,8 @@ int sbsjoinsbs(sbs str, const sbs argv[], int argc, const char *sep,
                size_t seplen) {
   int j;
 
-  sbshdr *s = to_sbshdr(str);
-  sbshdr backup = *s;
+  sbshdr *h = to_sbshdr(str);
+  sbshdr backup = *h;
 
   for (j = 0; j < argc; j++) {
     SBS_CATCH(sbscatsbs(str, argv[j]), goto fail);
@@ -317,14 +317,14 @@ int sbsjoinsbs(sbs str, const sbs argv[], int argc, const char *sep,
   }
   return 0;
 fail:
-  *s = backup;
-  SBS_NULLTERM(s);  // fix the buffer
+  *h = backup;
+  SBS_NULLTERM(h);  // fix the buffer
   return -1;
 }
 #ifndef SBS_NO_FORMAT
 static int sbscatvfmt(sbs str, char const *fmt, va_list ap) {
-  sbshdr *s = to_sbshdr(str);
-  sbshdr backup = *s;
+  sbshdr *h = to_sbshdr(str);
+  sbshdr backup = *h;
   const char *f = fmt;
 
   f = fmt; /* Next format specifier byte to process. */
@@ -390,8 +390,8 @@ static int sbscatvfmt(sbs str, char const *fmt, va_list ap) {
   }
   return 0;
 fail:
-  *s = backup;
-  SBS_NULLTERM(s);  // fix the buffer
+  *h = backup;
+  SBS_NULLTERM(h);  // fix the buffer
   return -1;
 }
 
@@ -404,8 +404,8 @@ int sbscatfmt(sbs s, char const *fmt, ...) {
 }
 
 int sbscatrepr(sbs s, const char *p, size_t len) {
-  sbshdr *str = to_sbshdr(s);
-  sbshdr backup = *str;
+  sbshdr *h = to_sbshdr(s);
+  sbshdr backup = *h;
   SBS_CATCH(sbscatlen(s, "\"", 1), goto fail);
   while (len--) {
     switch (*p) {
@@ -441,8 +441,8 @@ int sbscatrepr(sbs s, const char *p, size_t len) {
   SBS_CATCH(sbscatlen(s, "\"", 1), goto fail);
   return 0;
 fail:
-  *str = backup;
-  SBS_NULLTERM(str);  // fix string buffer
+  *h = backup;
+  SBS_NULLTERM(h);  // fix string buffer
   return -1;
 }
 #endif
